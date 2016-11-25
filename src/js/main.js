@@ -42,9 +42,9 @@ var PreloaderScene = {
       this.game.load.atlas('animationDesc', './images/rush_spritesheet.png', './images/rush_spritesheet.json', 
       Phaser.Loader.TEXTURE_ATLAS_JSON_HASH);
 
+
       //TODO 2.2a Escuchar el evento onLoadComplete con el método loadComplete que el state 'play'
-      
-      this.game.load.onLoadComplete.add(loadComplete, this);
+    this.load.onLoadComplete.add(this.loadComplete, this);
 });
 
   },
@@ -54,22 +54,14 @@ var PreloaderScene = {
     console.log("Game Assets Loading ...");
   },
     
+  //TODO 2.2b function loadComplete()
+  loadComplete: function() {
+    this.game.state.start('play');
+  },
     
-     //TODO 2.2b function loadComplete()
-    loadComplete: function() {
-
-      if (this._created == false && this.onCreateCallback != null) {
-        this._created = true;
-        this.onCreateCallback();
-      } else {
-        this._created = true;
-      }
-
-    },
-    
-    update: function(){
-        this._loadingBar
-    }
+  update: function(){
+    this._loadingBar
+  }
 };
 
 
@@ -85,20 +77,23 @@ var wfconfig = {
     }
  
 };
- 
-//TODO 3.2 Cargar Google font cuando la página esté cargada con wfconfig.
-//TODO 3.3 La creación del juego y la asignación de los states se hará en el método init().
 
-window.onload = function () {
-  var game = new Phaser.Game(800, 600, Phaser.AUTO, 'game');
+//TODO 3.2 Cargar Google font cuando la página esté cargada con wfconfig.
+window.onload = function() {
+    WebFont.load(wfconfig); //carga la fuente definida en el objeto anterior.
+};
+
+//TODO 3.3 La creación del juego y la asignación de los states se hará en el método init().
+function init () {
+   var game = new Phaser.Game(800, 600, Phaser.AUTO, 'game');
 
 //TODO 1.2 Añadir los states 'boot' BootScene, 'menu' MenuScene,
 // 'preloader' PreloaderScene, 'play' PlayScene, 'gameOver' GameOver.
-  game.state.add('boot', BootScene);
-  game.state.add('preloader', PreloaderScene);
-  game.state.add('play', playScene);
-  game.state.add('gameOver', gameOver);
-  game.state.add('menu', menuScene);
+  this.game.state.add('boot', BootScene);
+  this.game.state.add('preloader', PreloaderScene);
+  this.game.state.add('play', playScene);
+  this.game.state.add('gameOver', gameOver);
+  this.game.state.add('menu', menuScene);
 
 //TODO 1.3 iniciar el state 'boot'. 
   this.game.state.start('boot');
