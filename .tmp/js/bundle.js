@@ -143,7 +143,7 @@ function init () {
 },{"./gameover_scene.js":1,"./menu_scene":3,"./play_scene.js":4}],3:[function(require,module,exports){
 var MenuScene = {
     create: function () {
-        
+        this.game.world.setBounds(0,0,800,600);
         var logo = this.game.add.sprite(this.game.world.centerX, 
                                         this.game.world.centerY, 
                                         'logo');
@@ -360,7 +360,7 @@ var PlayScene = {
     destroy: function(){
         this.tilemap.destroy();
         this.tiles.destroy();
-        this.logo.destroy();
+        this.game.world.setBounds(0,0,800,600);
     }
 
 };

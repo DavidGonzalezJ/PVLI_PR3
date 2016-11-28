@@ -191,7 +191,7 @@ var PlayScene = {
     destroy: function(){
         this.tilemap.destroy();
         this.tiles.destroy();
-        this.logo.destroy();
+        this.game.world.setBounds(0,0,800,600);
     }
 
 };
