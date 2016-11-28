@@ -37,9 +37,9 @@ var PreloaderScene = {
       //la imagen 'images/simples_pimples.png' con el nombre de la cache 'tiles' y
       // el atlasJSONHash con 'images/rush_spritesheet.png' como imagen y
       // 'images/rush_spritesheet.json' como descriptor de la animación.
-      this.game.load.tilemap('tilemap', './images/map.json', null, Phaser.Tilemap.TILED_JSON);//
-      this.game.load.image('tiles','./images/simples_pimples.png');//
-      this.game.load.atlas('animationDesc', './images/rush_spritesheet.png', './images/rush_spritesheet.json', 
+      this.game.load.tilemap('tilemap', 'images/map.json', null, Phaser.Tilemap.TILED_JSON);//
+      this.game.load.image('tiles','images/simples_pimples.png');//
+      this.game.load.atlas('rush', 'images/rush_spritesheet.png', 'images/rush_spritesheet.json', 
       Phaser.Loader.TEXTURE_ATLAS_JSON_HASH);
 
 
@@ -89,13 +89,13 @@ function init () {
 
 //TODO 1.2 Añadir los states 'boot' BootScene, 'menu' MenuScene,
 // 'preloader' PreloaderScene, 'play' PlayScene, 'gameOver' GameOver.
-  this.game.state.add('boot', BootScene);
-  this.game.state.add('preloader', PreloaderScene);
-  this.game.state.add('play', playScene);
-  this.game.state.add('gameOver', gameOver);
-  this.game.state.add('menu', menuScene);
+  game.state.add('boot', BootScene);
+  game.state.add('preloader', PreloaderScene);
+  game.state.add('play', playScene);
+  game.state.add('gameOver', gameOver);
+  game.state.add('menu', menuScene);
 
 //TODO 1.3 iniciar el state 'boot'. 
-  this.game.state.start('boot');
+  game.state.start('boot');
     
 };

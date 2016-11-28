@@ -18,9 +18,12 @@ var PlayScene = {
   create: function () {
       //Creamos al player con un sprite por defecto.
       //TODO 5 Creamos a rush 'rush'  con el sprite por defecto en el 10, 10 con la animación por defecto 'rush_idle01'
-      
+      this._rush = this.game.add.sprite(10,10,'rush');
+
       //TODO 4: Cargar el tilemap 'tilemap' y asignarle al tileset 'patrones' la imagen de sprites 'tiles'
-      
+      this.map = this.game.add.tilemap('tilemap');
+      this.map.addTilesetImage('patrones','tiles');
+
       //Creacion de las layers
       this.backgroundLayer = this.map.createLayer('BackgroundLayer');
       this.groundLayer = this.map.createLayer('GroundLayer');
@@ -132,6 +135,7 @@ var PlayScene = {
     
     onPlayerFell: function(){
         //TODO 6 Carga de 'gameOver';
+        this.state.game.start('gameOver');
     },
     
     checkPlayerFell: function(){
@@ -185,6 +189,7 @@ var PlayScene = {
     
     //TODO 9 destruir los recursos tilemap, tiles y logo.
 
+    
 };
 
 module.exports = PlayScene;
