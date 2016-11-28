@@ -3,9 +3,9 @@
 //TODO 1.1 Require de las escenas, play_scene, gameover_scene y menu_scene.
 
 //  The Google WebFont Loader will look for this object, so create it before loading the script.
-var playScene = require ('play_scene'); 
-var gameOver = require ('gameover_scene');
-var menuScene = require ('menu_scene'); 
+var playScene = require ('./play_scene.js'); 
+var gameOver = require ('./gameover_scene.js');
+var menuScene = require ('./menu_scene'); 
 
 
 var BootScene = {
@@ -45,7 +45,7 @@ var PreloaderScene = {
 
       //TODO 2.2a Escuchar el evento onLoadComplete con el método loadComplete que el state 'play'
     this.load.onLoadComplete.add(this.loadComplete, this);
-});
+//});
 
   },
 
