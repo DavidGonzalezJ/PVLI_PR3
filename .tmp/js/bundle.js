@@ -79,6 +79,8 @@ var PreloaderScene = {
       // 'images/rush_spritesheet.json' como descriptor de la animación.
       this.game.load.tilemap('tilemap', 'images/map.json', null, Phaser.Tilemap.TILED_JSON);//
       this.game.load.image('tiles','images/simples_pimples.png');//
+      //Carga del enemigo
+      this.game.load.image('enemy', 'images/enemy.png');
       this.game.load.atlas('rush', 'images/rush_spritesheet.png', 'images/rush_spritesheet.json', 
       Phaser.Loader.TEXTURE_ATLAS_JSON_HASH);
 
@@ -173,22 +175,35 @@ module.exports = MenuScene;
 //mover el player.
 var PlayerState = {'JUMP':0, 'RUN':1, 'FALLING':2, 'STOP':3}
 var Direction = {'LEFT':0, 'RIGHT':1, 'NONE':3}
-
+function Enemy(x, y, sprite, game){
+    this._sprite = game.add.sprite( x, y, sprite);
+    //Escalado guarro para las pruebas
+    this._sprite.scale.setTo(0.1,0.1);
+    game.physics.arcade.enable(this._sprite);
+    this._sprite.body.bounce.y = 0;
+    this._sprite.body.gravity.y = 30;
+    this._sprite.body.bounce.y = 0;// 0.7 + Math.random() * 0.2;
+    this._sprite.body.bounce.x = 0;
+    //this._sprite.body.collideWorldBounds = true;
+    this._sprite.body.velocity.x = 0;
+    //this._sprite.enableBody = true;
+}
+//var enemies;
 //Scena de juego.
 var PlayScene = {
     _rush: {}, //player
-    _speed: 300, //velocidad del player
-    _jumpSpeed: 600, //velocidad de salto
+    _enemy2:{},
+    _speed: /*300*/300, //velocidad del player
+    _jumpSpeed: /*600*/ 400, //velocidad de salto
     _jumpHight: 150, //altura máxima del salto.
     _playerState: PlayerState.STOP, //estado del player
     _direction: Direction.NONE,  //dirección inicial del player. NONE es ninguna dirección.
-
     //Método constructor...
-  create: function () {
+    create: function () {
       //Creamos al player con un sprite por defecto.
+      this.game.physics.startSystem(Phaser.Physics.ARCADE);
       //TODO 5 Creamos a rush 'rush'  con el sprite por defecto en el 10, 10 con la animación por defecto 'rush_idle01'
-      this._rush = this.game.add.sprite(10,10,'rush');
-
+      this._rush = this.game.add.sprite(10,275,'rush');
       //TODO 4: Cargar el tilemap 'tilemap' y asignarle al tileset 'patrones' la imagen de sprites 'tiles'
       this.map = this.game.add.tilemap('tilemap');
       this.map.addTilesetImage('patrones','tiles');
@@ -204,9 +219,9 @@ var PlayScene = {
       this.death.visible = false;
       //Cambia la escala a x3.
       this.groundLayer.setScale(3,3);
-      this.backgroundLayer.setScale(3,3);
+      this.backgroundLayer.setScale(5,5);
       this.death.setScale(3,3);
-      
+     
       //this.groundLayer.resizeWorld(); //resize world and adjust to the screen
       
       //nombre de la animación, frames, framerate, isloop
@@ -217,23 +232,40 @@ var PlayScene = {
       this._rush.animations.add('jump',
                      Phaser.Animation.generateFrameNames('rush_jump',2,2,'',2),0,false);
       this.configure();
+      //Introduzco al enemigo
+      this.enemy2 = new Enemy(100,275,'enemy',this.game);
   },
     
     //IS called one per frame.
     update: function () {
         var moveDirection = new Phaser.Point(0, 0);
         var collisionWithTilemap = this.game.physics.arcade.collide(this._rush, this.groundLayer);
+        var collisionWithTilemap2 = this.game.physics.arcade.collide(this.enemy2, this.groundLayer);
         var movement = this.GetMovement();
         //transitions
         switch(this._playerState)
         {
-            case PlayerState.STOP:
+            case PlayerState.STOP://CREO QUE LE VENDRIA BIEN TENER LOS IF ELSE DE ABAJO
+          /*   if(this.isJumping(collisionWithTilemap)){
+                    this._playerState = PlayerState.JUMP;
+                    this._initialJumpHeight = this._rush.y;
+                    this._rush.animations.play('jump');
+                }
+                else{
+                    if(movement !== Direction.NONE){
+                        this._playerState = PlayerState.RUN;
+                        this._rush.animations.play('run');
+                    }
+                }    
+                break;*/
             case PlayerState.RUN:
                 if(this.isJumping(collisionWithTilemap)){
                     this._playerState = PlayerState.JUMP;
                     this._initialJumpHeight = this._rush.y;
                     this._rush.animations.play('jump');
                 }
+                /*else if(this._initialJumpHeight < this._rush.y)
+                    this._playerState = PlayerState.FALLING;*/
                 else{
                     if(movement !== Direction.NONE){
                         this._playerState = PlayerState.RUN;
@@ -266,6 +298,8 @@ var PlayScene = {
                 }
                 break;     
         }
+        if(this._playerState !== PlayerState.JUMP && !this.isStanding())
+            this._playerState = PlayerState.FALLING;
         //States
         switch(this._playerState){
                 
@@ -274,32 +308,34 @@ var PlayScene = {
                 break;
             case PlayerState.JUMP:
             case PlayerState.RUN:
+
             case PlayerState.FALLING:
                 if(movement === Direction.RIGHT){
                     moveDirection.x = this._speed;
                     if(this._rush.scale.x < 0)
                         this._rush.scale.x *= -1;
                 }
-                else{
+                else if(movement === Direction.LEFT){
                     moveDirection.x = -this._speed;
                     if(this._rush.scale.x > 0)
                         this._rush.scale.x *= -1; 
                 }
                 if(this._playerState === PlayerState.JUMP)
                     moveDirection.y = -this._jumpSpeed;
-                if(this._playerState === PlayerState.FALLING)
-                    moveDirection.y = 0;
+                else if(this._playerState === PlayerState.FALLING)
+                    moveDirection.y = this._jumpSpeed;//0;
                 break;    
         }
         //movement
-        this.movement(moveDirection,5,
+        this.movement(moveDirection,50,
                       this.backgroundLayer.layer.widthInPixels*this.backgroundLayer.scale.x - 10);
         this.checkPlayerFell();
+        console.log(this._playerState);
     },
     
     
     canJump: function(collisionWithTilemap){
-        return this.isStanding() && collisionWithTilemap || this._jamping;
+        return this.isStanding() && collisionWithTilemap; //|| this._jamping; //ESTO PUEDE SERVIR PARA ALGO
     },
     
     onPlayerFell: function(){
@@ -313,7 +349,7 @@ var PlayScene = {
     },
         
     isStanding: function(){
-        return this._rush.body.blocked.down || this._rush.body.touching.down
+        return this._rush.body.blocked.down || this._rush.body.touching.down;
     },
         
     isJumping: function(collisionWithTilemap){
@@ -337,13 +373,15 @@ var PlayScene = {
     configure: function(){
         //Start the Arcade Physics systems
         this.game.world.setBounds(0, 0, 2400, 160);
-        this.game.physics.startSystem(Phaser.Physics.ARCADE);
-        this.game.stage.backgroundColor = '#a9f0ff';
-        this.game.physics.arcade.enable(this._rush);
+        //this.game.physics.startSystem(Phaser.Physics.ARCADE);
+        this.game.stage.backgroundColor = '#a920ff';
+        this.game.physics.arcade.enable(this._rush,this._enemy2);
         
-        this._rush.body.bounce.y = 0.2;
-        this._rush.body.gravity.y = 20000;
+        this._rush.body.bounce.y = 0;
+        //Creo que deberíamos quitar la gravedad y controlarlo nosotros
+        this._rush.body.gravity.y = /*20000*/ 1;
         this._rush.body.gravity.x = 0;
+        //Este creo que no es necesario
         this._rush.body.velocity.x = 0;
         this.game.camera.follow(this._rush);
     },
