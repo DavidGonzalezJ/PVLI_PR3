@@ -41,6 +41,8 @@ var PreloaderScene = {
       this.game.load.image('tiles','images/simples_pimples.png');//
       //Carga del enemigo
       this.game.load.image('enemy', 'images/enemy.png');
+      //Carga de la cruz
+      this.game.load.image('cross', 'images/cross.png');
       this.game.load.atlas('rush', 'images/rush_spritesheet.png', 'images/rush_spritesheet.json', 
       Phaser.Loader.TEXTURE_ATLAS_JSON_HASH);
 

@@ -4,35 +4,138 @@
 //mover el player.
 var PlayerState = {'JUMP':0, 'RUN':1, 'FALLING':2, 'STOP':3}
 var Direction = {'LEFT':0, 'RIGHT':1, 'NONE':3}
+//Constructoras de enemigos y objetos
+function CelestialCross(character, sprite, game){
+    this._sprite = game.add.sprite(character.x, character.y+5,sprite);
+    this._sprite.scale.setTo(0.1,0.1);
+    //hago invisible el sprite
+    //this._sprite.visible = false;
+    this.character = character;
+    game.physics.arcade.enable(this._sprite);
+    this.speed = 350;
+    this.maxDist = 200;
+    this.vuelta = false;
+    this.initialPosX;
+    this.launched = false;
+    this._sprite.kill();
+}
+CelestialCross.prototype.move = function(character){
+    //this.initialPosX = this.character.x;
+    if(this.launched === false){
+        this._sprite.x = character.x;
+        this._sprite.y = character.y;
+        this.launched = true;
+    }
+    if(this.initialPosX === null) this.initialPosX = this._sprite.x;
+    //this.vuelta = false;
+    //var initialPosY = this.character.y;
+    //hago visible el sprite
+    this._sprite.revive();
+    if(character.scale.x > 0){
+        if(!this.vuelta && this._sprite.x < this.initialPosX + this.maxDist){
+            this._sprite.body.velocity.x = this.speed + character.body.velocity.x;
+        }
+        else this.vuelta = true;
+        if(this.vuelta){
+            this._sprite.body.velocity.x = -this.speed;
+        }
+        this._sprite.y = character.y;
+    //if(character.scale.x > 0)
+        if(this._sprite.x <= character.x-2){
+            this._sprite.kill();
+            this.vuelta = false;
+            this.initialPosX = null; 
+            this.launched = false;
+            return true;
+        }
+    }
+    else if(character.scale.x < 0){
+        if(!this.vuelta && this._sprite.x > this.initialPosX - this.maxDist){
+            this._sprite.body.velocity.x = -this.speed + character.body.velocity.x;
+        }
+        else this.vuelta = true;
+        if(this.vuelta){
+            this._sprite.body.velocity.x = this.speed;
+        }
+        this._sprite.y = character.y;
+    //if(character.scale.x > 0)
+        if(this._sprite.x >= character.x+2){
+            this._sprite.kill();
+            this.vuelta = false;
+            this.initialPosX = null; 
+            this.launched = false;
+            return true;
+        }
+    }
+        return false;
+    /*else this.vuelta = true;
+    if(this.vuelta){
+        this._sprite.body.velocity.x = -this.speed;
+    }
+    this._sprite.y = character.y;
+    //if(character.scale.x > 0)
+        if(this._sprite.x == character.x-10){
+            this._sprite.kill();
+            this.vuelta = false;
+            this.initialPosX = null; 
+            this.launched = false;
+            lanzamiento = false;*/
+        
+    /*else if(character.scale.x < 0)
+        if(this._sprite.x == character.x+10){
+            this._sprite.kill();
+            this.vuelta = false;
+            this.initialPosX = null; 
+            this.launched = false;
+            lanzamiento = false;
+        }*/
+}
+
+
 function Enemy(x, y, sprite, game){
     this._sprite = game.add.sprite( x, y, sprite);
+    //Posición inicial necesaria para el movimiento
+    this.initialPos = this._sprite.x;
+    this.speed = 150;
     //Escalado guarro para las pruebas
     this._sprite.scale.setTo(0.1,0.1);
     game.physics.arcade.enable(this._sprite);
-    this._sprite.body.bounce.y = 0;
+    this._sprite.body.velocity.x = -this.speed;
     this._sprite.body.gravity.y = 30;
-    this._sprite.body.bounce.y = 0;// 0.7 + Math.random() * 0.2;
-    this._sprite.body.bounce.x = 0;
-    //this._sprite.body.collideWorldBounds = true;
-    this._sprite.body.velocity.x = 0;
-    //this._sprite.enableBody = true;
+}
+Enemy.prototype.move = function(min,max){
+
+    if(this._sprite.x === this.initialPos - min){ //&& this._sprite.x < this.initialPos + max)
+        this._sprite.body.velocity.x = this.speed;
+        if(this._sprite.scale.x > 0)
+            this._sprite.scale.x *= -1; 
+    }
+    else if(this._sprite.x === this.initialPos + max){
+        this._sprite.body.velocity.x = -this.speed;
+        if(this._sprite.scale.x < 0)
+            this._sprite.scale.x *= -1; 
+    }
+
 }
 //var enemies;
 //Scena de juego.
 var PlayScene = {
     _rush: {}, //player
     _enemy2:{},
-    _speed: /*300*/300, //velocidad del player
+    _speed: /*300*/250, //velocidad del player
     _jumpSpeed: /*600*/ 400, //velocidad de salto
     _jumpHight: 150, //altura máxima del salto.
     _playerState: PlayerState.STOP, //estado del player
     _direction: Direction.NONE,  //dirección inicial del player. NONE es ninguna dirección.
+    _lanzamiento: false,//controla el lanzamiento de la cruz
     //Método constructor...
     create: function () {
       //Creamos al player con un sprite por defecto.
       this.game.physics.startSystem(Phaser.Physics.ARCADE);
       //TODO 5 Creamos a rush 'rush'  con el sprite por defecto en el 10, 10 con la animación por defecto 'rush_idle01'
       this._rush = this.game.add.sprite(10,275,'rush');
+      //Creo la cruz de Santa Teresa
+      this.cross = new CelestialCross(this._rush,'cross',this.game);
       //TODO 4: Cargar el tilemap 'tilemap' y asignarle al tileset 'patrones' la imagen de sprites 'tiles'
       this.map = this.game.add.tilemap('tilemap');
       this.map.addTilesetImage('patrones','tiles');
@@ -69,7 +172,8 @@ var PlayScene = {
     update: function () {
         var moveDirection = new Phaser.Point(0, 0);
         var collisionWithTilemap = this.game.physics.arcade.collide(this._rush, this.groundLayer);
-        var collisionWithTilemap2 = this.game.physics.arcade.collide(this.enemy2, this.groundLayer);
+        var enemyStanding = this.game.physics.arcade.collide(this.enemy2._sprite, this.groundLayer);
+        var collisionWithEnemy = this.game.physics.arcade.collide(this._rush, this.enemy2._sprite);
         var movement = this.GetMovement();
         //transitions
         switch(this._playerState)
@@ -158,8 +262,14 @@ var PlayScene = {
         //movement
         this.movement(moveDirection,50,
                       this.backgroundLayer.layer.widthInPixels*this.backgroundLayer.scale.x - 10);
-        this.checkPlayerFell();
-        console.log(this._playerState);
+        this.enemy2.move(10,300);
+        //this._lanzamiento = this.launches();
+        if(this.launches()) this._lanzamiento = true;
+        if(this._lanzamiento)
+            if(this.cross.move(this._rush))
+                this._lanzamiento = false;
+        this.checkPlayerDmg(collisionWithEnemy);
+        //console.log(this._playerState);
     },
     
     
@@ -172,8 +282,8 @@ var PlayScene = {
         this.game.state.start('gameOver');
     },
     
-    checkPlayerFell: function(){
-        if(this.game.physics.arcade.collide(this._rush, this.death))
+    checkPlayerDmg: function(collisionWithEnemy){
+        if(this.game.physics.arcade.collide(this._rush, this.death) || collisionWithEnemy)
             this.onPlayerFell();
     },
         
@@ -183,7 +293,11 @@ var PlayScene = {
         
     isJumping: function(collisionWithTilemap){
         return this.canJump(collisionWithTilemap) && 
-            this.game.input.keyboard.isDown(Phaser.Keyboard.SPACEBAR);
+            this.game.input.keyboard.isDown(Phaser.Keyboard.UP);
+    },
+
+    launches:function(){
+        return this.game.input.keyboard.isDown(Phaser.Keyboard.SPACEBAR);
     },
         
     GetMovement: function(){
