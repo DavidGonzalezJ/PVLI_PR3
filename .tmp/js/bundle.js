@@ -179,8 +179,9 @@ var PlayerState = {'JUMP':0, 'RUN':1, 'FALLING':2, 'STOP':3}
 var Direction = {'LEFT':0, 'RIGHT':1, 'NONE':3}
 //Constructoras de enemigos y objetos
 function CelestialCross(character, sprite, game){
-    this._sprite = game.add.sprite(character.x, character.y+5,sprite);
+    this._sprite = game.add.sprite(character.x, character.y,sprite);
     this._sprite.scale.setTo(0.1,0.1);
+    this._sprite.anchor.setTo(0.5, 0.5);
     //hago invisible el sprite
     //this._sprite.visible = false;
     this.character = character;
@@ -188,80 +189,57 @@ function CelestialCross(character, sprite, game){
     this.speed = 350;
     this.maxDist = 200;
     this.vuelta = false;
-    this.initialPosX;
+    this.initialPosX = -150; //Igualación fuera de límites
     this.launched = false;
+    this.puntoFinal = -150;
     this._sprite.kill();
+    this.dir = 'NULL';
+    this.limit = false;
+}
+CelestialCross.prototype.setDirection = function(character){
+    if (character.scale.x > 0){
+        this._sprite.body.velocity.x = this.speed + character.body.velocity.x;
+        this.puntoFinal = character.x + this.maxDist;
+        this.dir = 'DERECHA';
+    }
+    else{
+        this._sprite.body.velocity.x = -this.speed + character.body.velocity.x;
+        this.puntoFinal = character.x - this.maxDist;
+        this.dir = 'IZQUIERDA';
+    }
 }
 CelestialCross.prototype.move = function(character){
-    //this.initialPosX = this.character.x;
+    this._sprite.revive();
     if(this.launched === false){
         this._sprite.x = character.x;
-        this._sprite.y = character.y;
+        this._sprite.y = character.y-10;
         this.launched = true;
     }
-    if(this.initialPosX === null) this.initialPosX = this._sprite.x;
-    //this.vuelta = false;
-    //var initialPosY = this.character.y;
-    //hago visible el sprite
-    this._sprite.revive();
-    if(character.scale.x > 0){
-        if(!this.vuelta && this._sprite.x < this.initialPosX + this.maxDist){
-            this._sprite.body.velocity.x = this.speed + character.body.velocity.x;
-        }
-        else this.vuelta = true;
-        if(this.vuelta){
-            this._sprite.body.velocity.x = -this.speed;
-        }
-        this._sprite.y = character.y;
-    //if(character.scale.x > 0)
-        if(this._sprite.x <= character.x-2){
-            this._sprite.kill();
-            this.vuelta = false;
-            this.initialPosX = null; 
-            this.launched = false;
-            return true;
+    if(this.dir === 'DERECHA'){
+        if(this._sprite.x >= this.puntoFinal) this.vuelta = true;
+        if(this.vuelta && !this.limit) {
+            this._sprite.body.velocity.x *= -1;
+            this.limit = true;
         }
     }
-    else if(character.scale.x < 0){
-        if(!this.vuelta && this._sprite.x > this.initialPosX - this.maxDist){
-            this._sprite.body.velocity.x = -this.speed + character.body.velocity.x;
-        }
-        else this.vuelta = true;
-        if(this.vuelta){
-            this._sprite.body.velocity.x = this.speed;
-        }
-        this._sprite.y = character.y;
-    //if(character.scale.x > 0)
-        if(this._sprite.x >= character.x+2){
-            this._sprite.kill();
-            this.vuelta = false;
-            this.initialPosX = null; 
-            this.launched = false;
-            return true;
+    else if(this.dir === 'IZQUIERDA'){
+        if(this._sprite.x <= this.puntoFinal) this.vuelta = true;
+        if(this.vuelta && !this.limit) {
+            this._sprite.body.velocity.x *= -1;
+            this.limit = true;
         }
     }
-        return false;
-    /*else this.vuelta = true;
-    if(this.vuelta){
-        this._sprite.body.velocity.x = -this.speed;
+    if(this.vuelta && this._sprite.x >= character.x-10 && this._sprite.x <= character.x+10){
+        this._sprite.kill();
+        this.vuelta = false;
+        this.initialPosX = -150; 
+        this.launched = false;
+        this.limit = false;
+        return true;
     }
     this._sprite.y = character.y;
-    //if(character.scale.x > 0)
-        if(this._sprite.x == character.x-10){
-            this._sprite.kill();
-            this.vuelta = false;
-            this.initialPosX = null; 
-            this.launched = false;
-            lanzamiento = false;*/
-        
-    /*else if(character.scale.x < 0)
-        if(this._sprite.x == character.x+10){
-            this._sprite.kill();
-            this.vuelta = false;
-            this.initialPosX = null; 
-            this.launched = false;
-            lanzamiento = false;
-        }*/
+    this._sprite.angle += 20;
+    return false;
 }
 
 
@@ -432,15 +410,20 @@ var PlayScene = {
                     moveDirection.y = this._jumpSpeed;//0;
                 break;    
         }
+        //Lanzamiento de la cruz
+        if(this.launches() && !this._lanzamiento){
+            this._lanzamiento = true;
+            this.cross.setDirection(this._rush);
+        }
+        if(this._lanzamiento)
+            if(this.cross.move(this._rush))
+                this._lanzamiento = false;
         //movement
         this.movement(moveDirection,50,
                       this.backgroundLayer.layer.widthInPixels*this.backgroundLayer.scale.x - 10);
         this.enemy2.move(10,300);
         //this._lanzamiento = this.launches();
-        if(this.launches()) this._lanzamiento = true;
-        if(this._lanzamiento)
-            if(this.cross.move(this._rush))
-                this._lanzamiento = false;
+        
         this.checkPlayerDmg(collisionWithEnemy);
         //console.log(this._playerState);
     },
