@@ -1,119 +1,172 @@
 'use strict';
 
-//Enumerados: PlayerState son los estado por los que pasa el player. Directions son las direcciones a las que se puede
-//mover el player.
+
+
 var PlayerState = {'JUMP':0, 'RUN':1, 'FALLING':2, 'STOP':3}
 var Direction = {'LEFT':0, 'RIGHT':1, 'NONE':3}
-//Constructoras de enemigos y objetos
+
+
+//CONSTRUCTORAS ENEMIGOS Y OBJETOS
+
+var enemy1;
+//////////CELESTIAL CROSS/////////////
 function CelestialCross(character, sprite, game){
-    this._sprite = game.add.sprite(character.x, character.y,sprite);
-    this._sprite.scale.setTo(0.1,0.1);
-    this._sprite.anchor.setTo(0.5, 0.5);
-    //hago invisible el sprite
-    //this._sprite.visible = false;
+    Phaser.Sprite.call(this, game, character.x,character.y,'cross');
+    game.add.existing(this);
+
+    this.scale.setTo(0.1,0.1);
+    this.anchor.setTo(0.5, 0.5);
+
     this.character = character;
-    game.physics.arcade.enable(this._sprite);
+    game.physics.arcade.enable(this);
+    this.kill();
+
     this.speed = 350;
     this.maxDist = 200;
-    this.vuelta = false;
-    this.initialPosX = -150; //Igualación fuera de límites
-    this.launched = false;
+    this.initialPosX = -150;
     this.puntoFinal = -150;
-    this._sprite.kill();
+    
     this.dir = 'NULL';
+
+    this.vuelta = false;
+    this.launched = false;
     this.limit = false;
 }
+
+CelestialCross.prototype = Object.create(Phaser.Sprite.prototype);
+CelestialCross.prototype.constructor = CelestialCross;
 CelestialCross.prototype.setDirection = function(character){
     if (character.scale.x > 0){
-        this._sprite.body.velocity.x = this.speed + character.body.velocity.x;
+        this.body.velocity.x = this.speed + character.body.velocity.x;
         this.puntoFinal = character.x + this.maxDist;
         this.dir = 'DERECHA';
     }
     else{
-        this._sprite.body.velocity.x = -this.speed + character.body.velocity.x;
+        this.body.velocity.x = -this.speed + character.body.velocity.x;
         this.puntoFinal = character.x - this.maxDist;
         this.dir = 'IZQUIERDA';
     }
 }
+
 CelestialCross.prototype.move = function(character){
-    this._sprite.revive();
+    this.revive();
+
     if(this.launched === false){
-        this._sprite.x = character.x;
-        this._sprite.y = character.y-10;
+        this.x = character.x;
+        this.y = character.y-10;
         this.launched = true;
-    }
-    if(this.dir === 'DERECHA'){
-        if(this._sprite.x >= this.puntoFinal) this.vuelta = true;
-        if(this.vuelta && !this.limit) {
-            this._sprite.body.velocity.x *= -1;
-            this.limit = true;
+    }else{
+        if(this.dir === 'DERECHA'){
+            if(this.x >= this.puntoFinal) this.vuelta = true;
+            if(this.vuelta && !this.limit) {
+                this.body.velocity.x *= -1;
+                this.limit = true;
+            }
         }
-    }
-    else if(this.dir === 'IZQUIERDA'){
-        if(this._sprite.x <= this.puntoFinal) this.vuelta = true;
-        if(this.vuelta && !this.limit) {
-            this._sprite.body.velocity.x *= -1;
-            this.limit = true;
+        else if(this.dir === 'IZQUIERDA'){
+            if(this.x <= this.puntoFinal) this.vuelta = true;
+            if(this.vuelta && !this.limit) {
+                this.body.velocity.x *= -1;
+                this.limit = true;
+            }
         }
+        if(this.vuelta && this.x >= character.x-10 && this.x <= character.x+10){
+            this.kill();
+            this.vuelta = false;
+            this.initialPosX = -150; 
+            this.launched = false;
+            this.limit = false;
+            return true;
+        }
+        this.y = character.y;
+        this.angle += 20;
     }
-    if(this.vuelta && this._sprite.x >= character.x-10 && this._sprite.x <= character.x+10){
-        this._sprite.kill();
-        this.vuelta = false;
-        this.initialPosX = -150; 
-        this.launched = false;
-        this.limit = false;
-        return true;
-    }
-    this._sprite.y = character.y;
-    this._sprite.angle += 20;
+
     return false;
 }
+////////////////////////////////////////////////////////////
 
-
+///////////////////////ENEMIGO//////////////////////////////
 function Enemy(x, y, sprite, game){
-    this._sprite = game.add.sprite( x, y, sprite);
+    Phaser.Sprite.call(this, game, x,y,'enemy');
+    game.add.existing(this);
+
     //Posición inicial necesaria para el movimiento
-    this.initialPos = this._sprite.x;
+    this.initialPos = this.x;
     this.speed = 150;
     //Escalado guarro para las pruebas
-    this._sprite.scale.setTo(0.1,0.1);
-    game.physics.arcade.enable(this._sprite);
-    this._sprite.body.velocity.x = -this.speed;
-    this._sprite.body.gravity.y = 30;
+    this.scale.setTo(0.1,0.1);
+    game.physics.arcade.enable(this);
+    this.body.velocity.x = -this.speed;
+    this.body.gravity.y = 30;
 }
+Enemy.prototype = Object.create(Phaser.Sprite.prototype);
+Enemy.prototype.constructor = Enemy;
 Enemy.prototype.move = function(min,max){
 
-    if(this._sprite.x === this.initialPos - min){ //&& this._sprite.x < this.initialPos + max)
-        this._sprite.body.velocity.x = this.speed;
-        if(this._sprite.scale.x > 0)
-            this._sprite.scale.x *= -1; 
+    if(this.x === this.initialPos - min){ //&& this.x < this.initialPos + max)
+        this.body.velocity.x = this.speed;
+        if(this.scale.x > 0)
+            this.scale.x *= -1; 
     }
-    else if(this._sprite.x === this.initialPos + max){
-        this._sprite.body.velocity.x = -this.speed;
-        if(this._sprite.scale.x < 0)
-            this._sprite.scale.x *= -1; 
+    else if(this.x === this.initialPos + max){
+        this.body.velocity.x = -this.speed;
+        if(this.scale.x < 0)
+            this.scale.x *= -1; 
     }
 
 }
-//var enemies;
-//Scena de juego.
+Enemy.prototype.collisionCross = function(game,cross){
+    game.physics.arcade.overlap(cross, this, function (obj1, obj2) {
+        obj2.kill();
+        obj1.kill();
+
+        /////FUTURO MARCADOR
+        //score += 1;
+        //scoreText.text = 'Score: ' + score;
+    });
+}
+
+///////////////////////////////////////////////////
+ function EnemyBird(index, game, x,y){
+    this.bird = game.add.sprite(x,y,'enemy');
+    this.bird.anchor.setTo(0.5);
+    this.bird.name = index.toString();
+    game.physics.enable(this.bird, Phaser.Physics.ARCADE);
+    this.bird.body.immovable = true;
+    this.bird.body.collideWorldBounds = true;
+    this.bird.body.allowGravity =false;
+
+    this.bird.scale.setTo(0.1,0.1);
+    var time =4000;
+    this.birdTween= game.add.tween(this.bird).to({
+        x:this.bird.x + 200
+    }, time*0.9,Phaser.Easing.Sinusoidal.Out, true,0,100,true).to({x: x}, time * 0.9, Phaser.Easing.Sinusoidal.In, true, 1,100,true).start();
+
+}
+
+
+/////////////////PLAY SCENE///////////////////////
 var PlayScene = {
     _rush: {}, //player
     _enemy2:{},
-    _speed: /*300*/250, //velocidad del player
-    _jumpSpeed: /*600*/ 400, //velocidad de salto
+    enemies:{},
+    _speed: 250, //velocidad del player
+    _jumpSpeed: 400, //velocidad de salto
     _jumpHight: 150, //altura máxima del salto.
     _playerState: PlayerState.STOP, //estado del player
     _direction: Direction.NONE,  //dirección inicial del player. NONE es ninguna dirección.
     _lanzamiento: false,//controla el lanzamiento de la cruz
-    //Método constructor...
+
     create: function () {
       //Creamos al player con un sprite por defecto.
       this.game.physics.startSystem(Phaser.Physics.ARCADE);
+
       //TODO 5 Creamos a rush 'rush'  con el sprite por defecto en el 10, 10 con la animación por defecto 'rush_idle01'
       this._rush = this.game.add.sprite(10,275,'rush');
       //Creo la cruz de Santa Teresa
       this.cross = new CelestialCross(this._rush,'cross',this.game);
+
       //TODO 4: Cargar el tilemap 'tilemap' y asignarle al tileset 'patrones' la imagen de sprites 'tiles'
       this.map = this.game.add.tilemap('tilemap');
       this.map.addTilesetImage('patrones','tiles');
@@ -127,6 +180,7 @@ var PlayScene = {
       this.map.setCollisionBetween(1, 5000, true, 'Death');
       this.map.setCollisionBetween(1, 5000, true, 'GroundLayer');
       this.death.visible = false;
+      
       //Cambia la escala a x3.
       this.groundLayer.setScale(3,3);
       this.backgroundLayer.setScale(5,5);
@@ -142,41 +196,52 @@ var PlayScene = {
       this._rush.animations.add('jump',
                      Phaser.Animation.generateFrameNames('rush_jump',2,2,'',2),0,false);
       this.configure();
+
+
       //Introduzco al enemigo
-      this.enemy2 = new Enemy(100,275,'enemy',this.game);
+      this.enemies = this.game.add.group();
+      this.enemies.enableBody = true;
+
+        for (var i = 0; i < 2; i++) {
+            var enemy = new Enemy(130+ 30*i, 250, 'enemy', this.game);
+            this.enemies.add(enemy);
+        }
+
+      enemy1 = new EnemyBird(0, this.game, 100, 500);
+      
   },
     
     //IS called one per frame.
     update: function () {
         var moveDirection = new Phaser.Point(0, 0);
         var collisionWithTilemap = this.game.physics.arcade.collide(this._rush, this.groundLayer);
-        var enemyStanding = this.game.physics.arcade.collide(this.enemy2._sprite, this.groundLayer);
-        var collisionWithEnemy = this.game.physics.arcade.collide(this._rush, this.enemy2._sprite);
+        var enemyStanding = this.game.physics.arcade.collide(this.enemies, this.groundLayer);
+        var collisionWithEnemy = this.game.physics.arcade.collide(this._rush, this.enemies);
+
+        ///NO UTILIZADO AUN
+        var collisionWithEnemyBird = this.game.physics.arcade.collide(this._rush, enemy1.bird);
+        
+       
+        ///////////SI SE LANZA SE MIRA SI COLISIONA CON ENEMIGOS
+        if(this._lanzamiento){        
+            this.enemies.forEach( function(enemy) {
+                enemy.collisionCross(this.game, this.cross);
+            },this);
+        };
         var movement = this.GetMovement();
-        //transitions
+
+       
+
+        ///////////////////////TRANSITIONS//////////////////////
         switch(this._playerState)
         {
-            case PlayerState.STOP://CREO QUE LE VENDRIA BIEN TENER LOS IF ELSE DE ABAJO
-          /*   if(this.isJumping(collisionWithTilemap)){
-                    this._playerState = PlayerState.JUMP;
-                    this._initialJumpHeight = this._rush.y;
-                    this._rush.animations.play('jump');
-                }
-                else{
-                    if(movement !== Direction.NONE){
-                        this._playerState = PlayerState.RUN;
-                        this._rush.animations.play('run');
-                    }
-                }    
-                break;*/
+            case PlayerState.STOP:
             case PlayerState.RUN:
                 if(this.isJumping(collisionWithTilemap)){
                     this._playerState = PlayerState.JUMP;
                     this._initialJumpHeight = this._rush.y;
                     this._rush.animations.play('jump');
                 }
-                /*else if(this._initialJumpHeight < this._rush.y)
-                    this._playerState = PlayerState.FALLING;*/
                 else{
                     if(movement !== Direction.NONE){
                         this._playerState = PlayerState.RUN;
@@ -211,7 +276,11 @@ var PlayScene = {
         }
         if(this._playerState !== PlayerState.JUMP && !this.isStanding())
             this._playerState = PlayerState.FALLING;
-        //States
+
+        /////////////////////////////////////////////////////////////////////
+
+
+        ////////////////STATES////////////////////////
         switch(this._playerState){
                 
             case PlayerState.STOP:
@@ -237,7 +306,9 @@ var PlayScene = {
                     moveDirection.y = this._jumpSpeed;//0;
                 break;    
         }
-        //Lanzamiento de la cruz
+
+        ///////////CROSS LAUNCH/////////////////
+
         if(this.launches() && !this._lanzamiento){
             this._lanzamiento = true;
             this.cross.setDirection(this._rush);
@@ -245,12 +316,20 @@ var PlayScene = {
         if(this._lanzamiento)
             if(this.cross.move(this._rush))
                 this._lanzamiento = false;
-        //movement
+
+        ////////////////////////////////////////
+
+        ////////////MOVEMENT PLAYER////////////
         this.movement(moveDirection,50,
-                      this.backgroundLayer.layer.widthInPixels*this.backgroundLayer.scale.x - 10);
-        this.enemy2.move(10,300);
-        //this._lanzamiento = this.launches();
+            this.backgroundLayer.layer.widthInPixels*this.backgroundLayer.scale.x - 10);
         
+        this.enemies.forEach(function (aux){
+            aux.move(10,300);
+        });
+
+
+        this.checkPlayerDmg(collisionWithEnemyBird);
+
         this.checkPlayerDmg(collisionWithEnemy);
         //console.log(this._playerState);
     },
@@ -266,8 +345,11 @@ var PlayScene = {
     },
     
     checkPlayerDmg: function(collisionWithEnemy){
-        if(this.game.physics.arcade.collide(this._rush, this.death) || collisionWithEnemy)
+        if(this.game.physics.arcade.collide(this._rush, this.death) || collisionWithEnemy){
+            this._lanzamiento = false;
             this.onPlayerFell();
+        }
+
     },
         
     isStanding: function(){
@@ -295,9 +377,10 @@ var PlayScene = {
         }
         return movement;
     },
-    //configure the scene
+
+    //CONFIGURE THE SCENE
     configure: function(){
-        //Start the Arcade Physics systems
+
         this.game.world.setBounds(0, 0, 2400, 160);
         //this.game.physics.startSystem(Phaser.Physics.ARCADE);
         this.game.stage.backgroundColor = '#a920ff';
@@ -311,7 +394,8 @@ var PlayScene = {
         this._rush.body.velocity.x = 0;
         this.game.camera.follow(this._rush);
     },
-    //move the player
+
+    //MOVE PLAYER
     movement: function(point, xMin, xMax){
         this._rush.body.velocity = point;// * this.game.time.elapseTime;
         
@@ -320,7 +404,7 @@ var PlayScene = {
 
     },
     
-    //TODO 9 destruir los recursos tilemap, tiles y logo.
+    //DESTRUYE LOS RECURSOS
     destroy: function(){
         this.tilemap.destroy();
         this.tiles.destroy();
