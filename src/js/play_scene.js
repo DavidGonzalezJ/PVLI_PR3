@@ -1,7 +1,6 @@
 'use strict';
 
 
-
 var PlayerState = {'JUMP':0, 'RUN':1, 'FALLING':2, 'STOP':3}
 var Direction = {'LEFT':0, 'RIGHT':1, 'NONE':3}
 
@@ -145,6 +144,23 @@ Enemy.prototype.collisionCross = function(game,cross){
 }
 
 
+        function up() {
+            console.log('button up', arguments);
+        }
+
+        function over() {
+            console.log('button over');
+        }
+
+        function out() {
+            console.log('button out');
+        }
+
+        function actionOnClick () {
+
+            background.visible =! background.visible;
+
+        }
 /////////////////PLAY SCENE///////////////////////
 var PlayScene = {
     _rush: {}, //player
@@ -156,11 +172,23 @@ var PlayScene = {
     _playerState: PlayerState.STOP, //estado del player
     _direction: Direction.NONE,  //dirección inicial del player. NONE es ninguna dirección.
     _lanzamiento: false,//controla el lanzamiento de la cruz
+    menu:{},
+    pausestate: false,
 
     create: function () {
+
         ///PAUSA
         var Esc = this.game.input.keyboard.addKey(Phaser.Keyboard.ESC);
         Esc.onDown.add(this.unpause, this);
+
+        var button = this.game.add.button(this.game.world.centerX, 400, 'enemy', actionOnClick, this, 2, 1, 0);
+
+        button.onInputOver.add(over, this);
+        button.onInputOut.add(out, this);
+        button.onInputUp.add(up, this);
+
+
+
         //Creamos al player con un sprite por defecto.
         this.game.physics.startSystem(Phaser.Physics.ARCADE);
 
@@ -211,7 +239,7 @@ var PlayScene = {
 
         enemy1 = new EnemyBird(0, this.game, 100, 500);
     },
-    
+
     //IS called one per frame.
     update: function () {
 
@@ -349,6 +377,7 @@ var PlayScene = {
         if(this.game.physics.arcade.collide(this._rush, this.death) || collisionWithEnemy){
             this._lanzamiento = false;
             this.onPlayerFell();
+            this._playerState = PlayerState.STOP;
         }
 
     },
@@ -416,18 +445,74 @@ var PlayScene = {
         this.tiles.destroy();
         this.game.world.setBounds(0,0,800,600);
     },
-    pause: function(){
-        this.game.paused = true;
 
-    }, 
+    pause: function(){
+
+        Phaser.StateManager(this.game, this);
+        var estadoactual = this.game.state.current;
+       // this.game.state.add(estadoactual,'pause', true);
+        //Phaser.StateManager#pause();
+        //this.menu = new menu(this.game);
+        //this.game.StateManager.add(this, 'pause', true);
+        
+        this.game.state.start('pause');
+
+    },
+
     unpause: function (event){
         // Only act if paused
         if(this.game.paused){
-                // Unpause the game
-                this.game.paused = false;
+            // Unpause the game
+            this.pausestate = false;
+            this.game.paused = false;
+            this.menu.destroy();
         }
     }
 
 };
+
+function menu(game){
+
+    //////CREO EL MENU
+    this.button = game.add.button(400, 300,
+        'button', actionOnClick, this, 2, 1, 0);
+
+    this.button.onInputOver.add(actionOnClick,this);
+
+    this.button.anchor.set(0.5);
+    this.goText = game.add.text(400, 100, "GameOver");
+    this.text = game.add.text(0, 0, "Reset Game");
+    this.text.anchor.set(0.5);
+    this.goText.anchor.set(0.5);
+    this.button.addChild(this.text);
+    
+    //TODO 8 crear un boton con el texto 'Return Main Menu' que nos devuelva al menu del juego.
+    this.button2 = game.add.button(400, 400, 
+        'button',this.click2, this, 2, 1, 0);
+
+    this.button2.anchor.set(0.5);
+    this.text2 = game.add.text(0, 0, "Return Menu");
+    this.text2.anchor.set(0.5);
+    this.button2.addChild(this.text2);
+}
+menu.prototype.destroy = function(){
+    this.button.destroy();
+    this.goText.destroy();
+    this.text.destroy();
+    this.button2.destroy();
+    this.text2.destroy();
+}
+
+function actionOnClick (){
+    this.game.state.start('play');
+}
+    //Callback del otro botón (punto 8)
+function click2(){
+//this.game.state.start('preloader');
+    this.game.state.start('menu');
+}
+function pausar(){
+    this.pause();
+}
 
 module.exports = PlayScene;
