@@ -142,7 +142,6 @@ Enemy.prototype.collisionCross = function(game,cross){
     this.birdTween= game.add.tween(this.bird).to({
         x:this.bird.x + 200
     }, time*0.9,Phaser.Easing.Sinusoidal.Out, true,0,100,true).to({x: x}, time * 0.9, Phaser.Easing.Sinusoidal.In, true, 1,100,true).start();
-
 }
 
 
@@ -159,60 +158,64 @@ var PlayScene = {
     _lanzamiento: false,//controla el lanzamiento de la cruz
 
     create: function () {
-      //Creamos al player con un sprite por defecto.
-      this.game.physics.startSystem(Phaser.Physics.ARCADE);
+        ///PAUSA
+        var Esc = this.game.input.keyboard.addKey(Phaser.Keyboard.ESC);
+        Esc.onDown.add(this.unpause, this);
+        //Creamos al player con un sprite por defecto.
+        this.game.physics.startSystem(Phaser.Physics.ARCADE);
 
-      //TODO 5 Creamos a rush 'rush'  con el sprite por defecto en el 10, 10 con la animación por defecto 'rush_idle01'
-      this._rush = this.game.add.sprite(10,275,'rush');
-      //Creo la cruz de Santa Teresa
-      this.cross = new CelestialCross(this._rush,'cross',this.game);
+        //TODO 5 Creamos a rush 'rush'  con el sprite por defecto en el 10, 10 con la animación por defecto 'rush_idle01'
+        this._rush = this.game.add.sprite(10,275,'rush');
+        //Creo la cruz de Santa Teresa
+        this.cross = new CelestialCross(this._rush,'cross',this.game);
 
-      //TODO 4: Cargar el tilemap 'tilemap' y asignarle al tileset 'patrones' la imagen de sprites 'tiles'
-      this.map = this.game.add.tilemap('tilemap');
-      this.map.addTilesetImage('patrones','tiles');
+        //TODO 4: Cargar el tilemap 'tilemap' y asignarle al tileset 'patrones' la imagen de sprites 'tiles'
+        this.map = this.game.add.tilemap('tilemap');
+        this.map.addTilesetImage('patrones','tiles');
 
-      //Creacion de las layers
-      this.backgroundLayer = this.map.createLayer('BackgroundLayer');
-      this.groundLayer = this.map.createLayer('GroundLayer');
-      //plano de muerte
-      this.death = this.map.createLayer('Death');
-      //Colisiones con el plano de muerte y con el plano de muerte y con suelo.
-      this.map.setCollisionBetween(1, 5000, true, 'Death');
-      this.map.setCollisionBetween(1, 5000, true, 'GroundLayer');
-      this.death.visible = false;
-      
-      //Cambia la escala a x3.
-      this.groundLayer.setScale(3,3);
-      this.backgroundLayer.setScale(5,5);
-      this.death.setScale(3,3);
-     
-      //this.groundLayer.resizeWorld(); //resize world and adjust to the screen
-      
-      //nombre de la animación, frames, framerate, isloop
-      this._rush.animations.add('run',
-                    Phaser.Animation.generateFrameNames('rush_run',1,5,'',2),10,true);
-      this._rush.animations.add('stop',
-                    Phaser.Animation.generateFrameNames('rush_idle',1,1,'',2),0,false);
-      this._rush.animations.add('jump',
-                     Phaser.Animation.generateFrameNames('rush_jump',2,2,'',2),0,false);
-      this.configure();
+        //Creacion de las layers
+        this.backgroundLayer = this.map.createLayer('BackgroundLayer');
+        this.groundLayer = this.map.createLayer('GroundLayer');
+        //plano de muerte
+        this.death = this.map.createLayer('Death');
+        //Colisiones con el plano de muerte y con el plano de muerte y con suelo.
+        this.map.setCollisionBetween(1, 5000, true, 'Death');
+        this.map.setCollisionBetween(1, 5000, true, 'GroundLayer');
+        this.death.visible = false;
+          
+        //Cambia la escala a x3.
+        this.groundLayer.setScale(3,3);
+        this.backgroundLayer.setScale(5,5);
+        this.death.setScale(3,3);
+         
+        //this.groundLayer.resizeWorld(); //resize world and adjust to the screen
+          
+        //nombre de la animación, frames, framerate, isloop
+        this._rush.animations.add('run',
+            Phaser.Animation.generateFrameNames('rush_run',1,5,'',2),10,true);
+        this._rush.animations.add('stop',
+            Phaser.Animation.generateFrameNames('rush_idle',1,1,'',2),0,false);
+        this._rush.animations.add('jump',
+            Phaser.Animation.generateFrameNames('rush_jump',2,2,'',2),0,false);
+        this.configure();
 
 
-      //Introduzco al enemigo
-      this.enemies = this.game.add.group();
-      this.enemies.enableBody = true;
+        //Introduzco al enemigo
+        this.enemies = this.game.add.group();
+        this.enemies.enableBody = true;
 
         for (var i = 0; i < 2; i++) {
             var enemy = new Enemy(130+ 30*i, 250, 'enemy', this.game);
             this.enemies.add(enemy);
         }
 
-      enemy1 = new EnemyBird(0, this.game, 100, 500);
-      
-  },
+        enemy1 = new EnemyBird(0, this.game, 100, 500);
+    },
     
     //IS called one per frame.
     update: function () {
+
+        this.GetInput();
         var moveDirection = new Phaser.Point(0, 0);
         var collisionWithTilemap = this.game.physics.arcade.collide(this._rush, this.groundLayer);
         var enemyStanding = this.game.physics.arcade.collide(this.enemies, this.groundLayer);
@@ -227,10 +230,8 @@ var PlayScene = {
             this.enemies.forEach( function(enemy) {
                 enemy.collisionCross(this.game, this.cross);
             },this);
-        };
+        }
         var movement = this.GetMovement();
-
-       
 
         ///////////////////////TRANSITIONS//////////////////////
         switch(this._playerState)
@@ -378,6 +379,11 @@ var PlayScene = {
         return movement;
     },
 
+    GetInput:function(){
+        if(this.game.input.keyboard.isDown(Phaser.Keyboard.ESC))
+            this.pause();
+    },
+
     //CONFIGURE THE SCENE
     configure: function(){
 
@@ -409,6 +415,17 @@ var PlayScene = {
         this.tilemap.destroy();
         this.tiles.destroy();
         this.game.world.setBounds(0,0,800,600);
+    },
+    pause: function(){
+        this.game.paused = true;
+
+    }, 
+    unpause: function (event){
+        // Only act if paused
+        if(this.game.paused){
+                // Unpause the game
+                this.game.paused = false;
+        }
     }
 
 };
