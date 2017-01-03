@@ -1,14 +1,14 @@
-var pauseScene = {
+var victoryScene = {
     create: function () {
-        console.log("Paused");
+        console.log("Victory");
         var button = this.game.add.button(400, 300,
             'button',this.actionOnClick, this, 2, 1, 0);
 
         button.anchor.set(0.5);
 
-        var goText = this.game.add.text(400, 100, "Paused");
+        var goText = this.game.add.text(400, 100, "Victory");
 
-        var text = this.game.add.text(0, 0, "Continue Playing");
+        var text = this.game.add.text(0, 0, "Restart");
         text.anchor.set(0.5);
         goText.anchor.set(0.5);
         button.addChild(text);
@@ -26,7 +26,7 @@ var pauseScene = {
     
     //TODO 7 declarar el callback del boton.
     actionOnClick: function(){
-        this.game.state.resume('play');
+        this.game.state.start('play');
     },
 
     //Callback del otro botón (punto 8)
@@ -36,4 +36,4 @@ var pauseScene = {
     }
 };
 
-module.exports = pauseScene;
+module.exports = victoryScene;

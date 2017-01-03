@@ -7,7 +7,7 @@ var playScene = require ('./play_scene.js');
 var gameOver = require ('./gameover_scene.js');
 var menuScene = require ('./menu_scene');
 var pauseScene = require('./pause_scene');
-
+var victoryScene = require('./victory_scene');
 
 var BootScene = {
   preload: function () {
@@ -31,31 +31,25 @@ var PreloaderScene = {
     this.game.load.setPreloadSprite(this.loadingBar);
     this.game.stage.backgroundColor = "#000000";
     
-    
-    
     this.load.onLoadStart.add(this.loadStart, this);
-    //TODO 2.1 Cargar el tilemap images/map.json con el nombre de la cache 'tilemap'.
-      //la imagen 'images/simples_pimples.png' con el nombre de la cache 'tiles' y
-      // el atlasJSONHash con 'images/rush_spritesheet.png' como imagen y
-      // 'images/rush_spritesheet.json' como descriptor de la animación.
-      this.game.load.tilemap('tilemap', 'images/map.json', null, Phaser.Tilemap.TILED_JSON);//
-      this.game.load.image('tiles','images/simples_pimples.png');//
-      //Carga del enemigo
-      this.game.load.image('enemy', 'images/enemy.png');
-      //Carga de la cruz
-      this.game.load.image('cross', 'images/cross.png');
-      this.game.load.atlas('rush', 'images/rush_spritesheet.png', 'images/rush_spritesheet.json', 
+
+
+/////////////////////CARGA DE RECURSOS////////////////////////
+
+    this.game.load.tilemap('tilemap', 'images/map.json', null, Phaser.Tilemap.TILED_JSON);//
+    this.game.load.image('tiles','images/simples_pimples.png');//
+    //Carga del enemigo
+    this.game.load.image('enemy', 'images/enemy.png');
+    //Carga de la cruz
+    this.game.load.image('cross', 'images/cross.png');
+    this.game.load.atlas('rush', 'images/rush_spritesheet.png', 'images/rush_spritesheet.json', 
       Phaser.Loader.TEXTURE_ATLAS_JSON_HASH);
-   
-      //MENU
-      this.game.load.image('menu', 'images/menu.png');
+   this.game.load.image('God', 'images/god.png');
+    //MENU
+    this.game.load.image('menu', 'images/menu.png');
 
-
-
-      //TODO 2.2a Escuchar el evento onLoadComplete con el método loadComplete que el state 'play'
+    //Escucha el evento onLoadComplete con el método loadComplete que el state 'play'
     this.load.onLoadComplete.add(this.loadComplete, this);
-//});
-
   },
 
   loadStart: function () {
@@ -104,6 +98,7 @@ function init () {
   game.state.add('gameOver', gameOver);
   game.state.add('menu', menuScene);
   game.state.add('pause', pauseScene);
+  game.state.add('victory', victoryScene);
 
 
 //TODO 1.3 iniciar el state 'boot'. 

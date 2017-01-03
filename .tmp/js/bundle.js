@@ -47,7 +47,7 @@ var playScene = require ('./play_scene.js');
 var gameOver = require ('./gameover_scene.js');
 var menuScene = require ('./menu_scene');
 var pauseScene = require('./pause_scene');
-
+var victoryScene = require('./victory_scene');
 
 var BootScene = {
   preload: function () {
@@ -71,31 +71,25 @@ var PreloaderScene = {
     this.game.load.setPreloadSprite(this.loadingBar);
     this.game.stage.backgroundColor = "#000000";
     
-    
-    
     this.load.onLoadStart.add(this.loadStart, this);
-    //TODO 2.1 Cargar el tilemap images/map.json con el nombre de la cache 'tilemap'.
-      //la imagen 'images/simples_pimples.png' con el nombre de la cache 'tiles' y
-      // el atlasJSONHash con 'images/rush_spritesheet.png' como imagen y
-      // 'images/rush_spritesheet.json' como descriptor de la animación.
-      this.game.load.tilemap('tilemap', 'images/map.json', null, Phaser.Tilemap.TILED_JSON);//
-      this.game.load.image('tiles','images/simples_pimples.png');//
-      //Carga del enemigo
-      this.game.load.image('enemy', 'images/enemy.png');
-      //Carga de la cruz
-      this.game.load.image('cross', 'images/cross.png');
-      this.game.load.atlas('rush', 'images/rush_spritesheet.png', 'images/rush_spritesheet.json', 
+
+
+/////////////////////CARGA DE RECURSOS////////////////////////
+
+    this.game.load.tilemap('tilemap', 'images/map.json', null, Phaser.Tilemap.TILED_JSON);//
+    this.game.load.image('tiles','images/simples_pimples.png');//
+    //Carga del enemigo
+    this.game.load.image('enemy', 'images/enemy.png');
+    //Carga de la cruz
+    this.game.load.image('cross', 'images/cross.png');
+    this.game.load.atlas('rush', 'images/rush_spritesheet.png', 'images/rush_spritesheet.json', 
       Phaser.Loader.TEXTURE_ATLAS_JSON_HASH);
-   
-      //MENU
-      this.game.load.image('menu', 'images/menu.png');
+   this.game.load.image('God', 'images/god.png');
+    //MENU
+    this.game.load.image('menu', 'images/menu.png');
 
-
-
-      //TODO 2.2a Escuchar el evento onLoadComplete con el método loadComplete que el state 'play'
+    //Escucha el evento onLoadComplete con el método loadComplete que el state 'play'
     this.load.onLoadComplete.add(this.loadComplete, this);
-//});
-
   },
 
   loadStart: function () {
@@ -144,6 +138,7 @@ function init () {
   game.state.add('gameOver', gameOver);
   game.state.add('menu', menuScene);
   game.state.add('pause', pauseScene);
+  game.state.add('victory', victoryScene);
 
 
 //TODO 1.3 iniciar el state 'boot'. 
@@ -151,7 +146,7 @@ function init () {
     
 };
 
-},{"./gameover_scene.js":1,"./menu_scene":3,"./pause_scene":4,"./play_scene.js":5}],3:[function(require,module,exports){
+},{"./gameover_scene.js":1,"./menu_scene":3,"./pause_scene":4,"./play_scene.js":5,"./victory_scene":6}],3:[function(require,module,exports){
 var MenuScene = {
     create: function () {
         this.game.world.setBounds(0,0,800,600);
@@ -178,7 +173,7 @@ var MenuScene = {
 
 module.exports = MenuScene;
 },{}],4:[function(require,module,exports){
-var PauseScene = {
+var pauseScene = {
     create: function () {
         console.log("Paused");
         var button = this.game.add.button(400, 300,
@@ -216,7 +211,7 @@ var PauseScene = {
     }
 };
 
-module.exports = PauseScene;
+module.exports = pauseScene;
 },{}],5:[function(require,module,exports){
 'use strict';
 
@@ -304,11 +299,26 @@ CelestialCross.prototype.move = function(character){
     return false;
 }
 ////////////////////////////////////////////////////////////
+function God(x, y, sprite, game){
+    Phaser.Sprite.call(this, game, x,y,sprite);
+    game.add.existing(this);
+    game.physics.arcade.enable(this);
+}
+God.prototype = Object.create(Phaser.Sprite.prototype);
+God.prototype.constructor = God;
+God.prototype.checkWin = function(game,Teresa){
+    game.physics.arcade.overlap(Teresa, this, function (obj1, obj2) {
+        game.state.start('victory');
+    });
+}
+
+////////////////////////TERESA////////////////////
 
 ///////////////////////ENEMIGO//////////////////////////////
-function Enemy(x, y, sprite, game){
-    Phaser.Sprite.call(this, game, x,y,'enemy');
+function Enemy(x, y, sprite, game, dist){
+    Phaser.Sprite.call(this, game, x,y,sprite);
     game.add.existing(this);
+
 
     //Posición inicial necesaria para el movimiento
     this.initialPos = this.x;
@@ -318,23 +328,16 @@ function Enemy(x, y, sprite, game){
     game.physics.arcade.enable(this);
     this.body.velocity.x = -this.speed;
     this.body.gravity.y = 30;
+    this.body.collideWorldBounds = true;
+
+    var time = 4000;
+    this.EnemyTween= game.add.tween(this).to({
+        x:x + dist
+    }, 2000,Phaser.Linear,true, 1,100,true);
 }
+
 Enemy.prototype = Object.create(Phaser.Sprite.prototype);
 Enemy.prototype.constructor = Enemy;
-Enemy.prototype.move = function(min,max){
-
-    if(this.x === this.initialPos - min){ //&& this.x < this.initialPos + max)
-        this.body.velocity.x = this.speed;
-        if(this.scale.x > 0)
-            this.scale.x *= -1; 
-    }
-    else if(this.x === this.initialPos + max){
-        this.body.velocity.x = -this.speed;
-        if(this.scale.x < 0)
-            this.scale.x *= -1; 
-    }
-
-}
 Enemy.prototype.collisionCross = function(game,cross){
     game.physics.arcade.overlap(cross, this, function (obj1, obj2) {
         obj2.kill();
@@ -345,25 +348,34 @@ Enemy.prototype.collisionCross = function(game,cross){
         //scoreText.text = 'Score: ' + score;
     });
 }
-
 ///////////////////////////////////////////////////
- function EnemyBird(index, game, x,y){
-    this.bird = game.add.sprite(x,y,'enemy');
-    this.bird.anchor.setTo(0.5);
-    this.bird.name = index.toString();
-    game.physics.enable(this.bird, Phaser.Physics.ARCADE);
-    this.bird.body.immovable = true;
-    this.bird.body.collideWorldBounds = true;
-    this.bird.body.allowGravity =false;
 
-    this.bird.scale.setTo(0.1,0.1);
-    var time =4000;
-    this.birdTween= game.add.tween(this.bird).to({
-        x:this.bird.x + 200
-    }, time*0.9,Phaser.Easing.Sinusoidal.Out, true,0,100,true).to({x: x}, time * 0.9, Phaser.Easing.Sinusoidal.In, true, 1,100,true).start();
+ function EnemyBird(index, game, x,y){
+    Phaser.Sprite.call(this, game, x, y, 'enemy');
+    this.anchor.setTo(0.5);
+    this.name = 'EnemyBird_'+index.toString();
+
+    game.physics.enable(this, Phaser.Physics.ARCADE);
+    this.body.immovable = true;
+    this.body.collideWorldBounds = true;
+    this.body.allowGravity =false;
+
+    this.scale.setTo(0.1,0.1);
+    var time = 4000;
+    this.birdTween= game.add.tween(this).to({
+        x:this.x + x
+    }, time*0.9,Phaser.Easing.Sinusoidal.InOut, true, 1,100,true);
+}
+EnemyBird.prototype = Object.create(Phaser.Sprite.prototype);
+EnemyBird.prototype.constructor = EnemyBird;
+EnemyBird.prototype.collisionCross = function(game,cross){
+    game.physics.arcade.overlap(cross, this, function (obj1, obj2) {
+        obj2.kill();
+        obj1.kill();
+    });
 }
 
-
+/////////BOTON 
         function up() {
             console.log('button up', arguments);
         }
@@ -383,17 +395,18 @@ Enemy.prototype.collisionCross = function(game,cross){
         }
 /////////////////PLAY SCENE///////////////////////
 var PlayScene = {
-    _rush: {}, //player
+    _Teresa: {}, //player
     _enemy2:{},
     enemies:{},
     _speed: 250, //velocidad del player
     _jumpSpeed: 400, //velocidad de salto
-    _jumpHight: 150, //altura máxima del salto.
+    _jumpHight: 100, //altura máxima del salto.
     _playerState: PlayerState.STOP, //estado del player
     _direction: Direction.NONE,  //dirección inicial del player. NONE es ninguna dirección.
     _lanzamiento: false,//controla el lanzamiento de la cruz
     menu:{},
     pausestate: false,
+    god:{},
 
     create: function () {
 
@@ -413,9 +426,11 @@ var PlayScene = {
         this.game.physics.startSystem(Phaser.Physics.ARCADE);
 
         //TODO 5 Creamos a rush 'rush'  con el sprite por defecto en el 10, 10 con la animación por defecto 'rush_idle01'
-        this._rush = this.game.add.sprite(10,275,'rush');
+        this._Teresa = this.game.add.sprite(100,4700,'rush');
+                this.god = new God(this._Teresa.x+40, this._Teresa.y, 'God',this.game);
+
         //Creo la cruz de Santa Teresa
-        this.cross = new CelestialCross(this._rush,'cross',this.game);
+        this.cross = new CelestialCross(this._Teresa,'cross',this.game);
 
         //TODO 4: Cargar el tilemap 'tilemap' y asignarle al tileset 'patrones' la imagen de sprites 'tiles'
         this.map = this.game.add.tilemap('tilemap');
@@ -436,14 +451,14 @@ var PlayScene = {
         this.backgroundLayer.setScale(5,5);
         this.death.setScale(3,3);
          
-        //this.groundLayer.resizeWorld(); //resize world and adjust to the screen
+        this.groundLayer.resizeWorld(); //resize world and adjust to the screen
           
         //nombre de la animación, frames, framerate, isloop
-        this._rush.animations.add('run',
+        this._Teresa.animations.add('run',
             Phaser.Animation.generateFrameNames('rush_run',1,5,'',2),10,true);
-        this._rush.animations.add('stop',
+        this._Teresa.animations.add('stop',
             Phaser.Animation.generateFrameNames('rush_idle',1,1,'',2),0,false);
-        this._rush.animations.add('jump',
+        this._Teresa.animations.add('jump',
             Phaser.Animation.generateFrameNames('rush_jump',2,2,'',2),0,false);
         this.configure();
 
@@ -453,24 +468,24 @@ var PlayScene = {
         this.enemies.enableBody = true;
 
         for (var i = 0; i < 2; i++) {
-            var enemy = new Enemy(130+ 30*i, 250, 'enemy', this.game);
+            var enemy = new Enemy(130+ 30*i, 250, 'enemy', this.game,290);
             this.enemies.add(enemy);
         }
 
         enemy1 = new EnemyBird(0, this.game, 100, 500);
+        this.enemies.add(enemy1);
     },
 
     //IS called one per frame.
     update: function () {
-
         this.GetInput();
         var moveDirection = new Phaser.Point(0, 0);
-        var collisionWithTilemap = this.game.physics.arcade.collide(this._rush, this.groundLayer);
+        var collisionWithTilemap = this.game.physics.arcade.collide(this._Teresa, this.groundLayer);
         var enemyStanding = this.game.physics.arcade.collide(this.enemies, this.groundLayer);
-        var collisionWithEnemy = this.game.physics.arcade.collide(this._rush, this.enemies);
+        var collisionWithEnemy = this.game.physics.arcade.collide(this._Teresa, this.enemies);
 
         ///NO UTILIZADO AUN
-        var collisionWithEnemyBird = this.game.physics.arcade.collide(this._rush, enemy1.bird);
+        var collisionWithEnemyBird = this.game.physics.arcade.collide(this._Teresa, enemy1);
         
        
         ///////////SI SE LANZA SE MIRA SI COLISIONA CON ENEMIGOS
@@ -488,25 +503,25 @@ var PlayScene = {
             case PlayerState.RUN:
                 if(this.isJumping(collisionWithTilemap)){
                     this._playerState = PlayerState.JUMP;
-                    this._initialJumpHeight = this._rush.y;
-                    this._rush.animations.play('jump');
+                    this._initialJumpHeight = this._Teresa.y;
+                    this._Teresa.animations.play('jump');
                 }
                 else{
                     if(movement !== Direction.NONE){
                         this._playerState = PlayerState.RUN;
-                        this._rush.animations.play('run');
+                        this._Teresa.animations.play('run');
                     }
                     else{
                         this._playerState = PlayerState.STOP;
-                        this._rush.animations.play('stop');
+                        this._Teresa.animations.play('stop');
                     }
                 }    
                 break;
                 
             case PlayerState.JUMP:
                 
-                var currentJumpHeight = this._rush.y - this._initialJumpHeight;
-                this._playerState = (currentJumpHeight*currentJumpHeight < this._jumpHight*this._jumpHight)
+                var currentJumpHeight = this._Teresa.y - this._initialJumpHeight;
+                this._playerState = (currentJumpHeight*currentJumpHeight < this._jumpHight*this._jumpHight && !collisionWithTilemap)
                     ? PlayerState.JUMP : PlayerState.FALLING;
                 break;
                 
@@ -514,11 +529,11 @@ var PlayScene = {
                 if(this.isStanding()){
                     if(movement !== Direction.NONE){
                         this._playerState = PlayerState.RUN;
-                        this._rush.animations.play('run');
+                        this._Teresa.animations.play('run');
                     }
                     else{
                         this._playerState = PlayerState.STOP;
-                        this._rush.animations.play('stop');
+                        this._Teresa.animations.play('stop');
                     }
                 }
                 break;     
@@ -541,13 +556,13 @@ var PlayScene = {
             case PlayerState.FALLING:
                 if(movement === Direction.RIGHT){
                     moveDirection.x = this._speed;
-                    if(this._rush.scale.x < 0)
-                        this._rush.scale.x *= -1;
+                    if(this._Teresa.scale.x < 0)
+                        this._Teresa.scale.x *= -1;
                 }
                 else if(movement === Direction.LEFT){
                     moveDirection.x = -this._speed;
-                    if(this._rush.scale.x > 0)
-                        this._rush.scale.x *= -1; 
+                    if(this._Teresa.scale.x > 0)
+                        this._Teresa.scale.x *= -1; 
                 }
                 if(this._playerState === PlayerState.JUMP)
                     moveDirection.y = -this._jumpSpeed;
@@ -555,15 +570,15 @@ var PlayScene = {
                     moveDirection.y = this._jumpSpeed;//0;
                 break;    
         }
-
+        
         ///////////CROSS LAUNCH/////////////////
 
         if(this.launches() && !this._lanzamiento){
             this._lanzamiento = true;
-            this.cross.setDirection(this._rush);
+            this.cross.setDirection(this._Teresa);
         }
         if(this._lanzamiento)
-            if(this.cross.move(this._rush))
+            if(this.cross.move(this._Teresa))
                 this._lanzamiento = false;
 
         ////////////////////////////////////////
@@ -571,16 +586,19 @@ var PlayScene = {
         ////////////MOVEMENT PLAYER////////////
         this.movement(moveDirection,50,
             this.backgroundLayer.layer.widthInPixels*this.backgroundLayer.scale.x - 10);
-        
+        /*
         this.enemies.forEach(function (aux){
             aux.move(10,300);
         });
-
+*/
 
         this.checkPlayerDmg(collisionWithEnemyBird);
 
         this.checkPlayerDmg(collisionWithEnemy);
+        this.god.checkWin(this.game,this._Teresa);
+
         //console.log(this._playerState);
+        
     },
     
     
@@ -594,7 +612,7 @@ var PlayScene = {
     },
     
     checkPlayerDmg: function(collisionWithEnemy){
-        if(this.game.physics.arcade.collide(this._rush, this.death) || collisionWithEnemy){
+        if(this.game.physics.arcade.collide(this._Teresa, this.death) || collisionWithEnemy){
             this._lanzamiento = false;
             this.onPlayerFell();
             this._playerState = PlayerState.STOP;
@@ -603,7 +621,7 @@ var PlayScene = {
     },
         
     isStanding: function(){
-        return this._rush.body.blocked.down || this._rush.body.touching.down;
+        return this._Teresa.body.blocked.down || this._Teresa.body.touching.down;
     },
         
     isJumping: function(collisionWithTilemap){
@@ -636,26 +654,26 @@ var PlayScene = {
     //CONFIGURE THE SCENE
     configure: function(){
 
-        this.game.world.setBounds(0, 0, 2400, 160);
+        this.game.world.setBounds(0, 0, 1000, 4800);
         //this.game.physics.startSystem(Phaser.Physics.ARCADE);
         this.game.stage.backgroundColor = '#a920ff';
-        this.game.physics.arcade.enable(this._rush,this._enemy2);
+        this.game.physics.arcade.enable(this._Teresa,this._enemy2);
         
-        this._rush.body.bounce.y = 0;
+        this._Teresa.body.bounce.y = 0;
         //Creo que deberíamos quitar la gravedad y controlarlo nosotros
-        this._rush.body.gravity.y = /*20000*/ 1;
-        this._rush.body.gravity.x = 0;
+        this._Teresa.body.gravity.y = 1;
+        this._Teresa.body.gravity.x = 0;
         //Este creo que no es necesario
-        this._rush.body.velocity.x = 0;
-        this.game.camera.follow(this._rush);
+        this._Teresa.body.velocity.x = 0;
+        this.game.camera.follow(this._Teresa);
     },
 
     //MOVE PLAYER
     movement: function(point, xMin, xMax){
-        this._rush.body.velocity = point;// * this.game.time.elapseTime;
+        this._Teresa.body.velocity = point;// * this.game.time.elapseTime;
         
-        if((this._rush.x < xMin && point.x < 0)|| (this._rush.x > xMax && point.x > 0))
-            this._rush.body.velocity.x = 0;
+        if((this._Teresa.x < xMin && point.x < 0)|| (this._Teresa.x > xMax && point.x > 0))
+            this._Teresa.body.velocity.x = 0;
 
     },
     
@@ -667,15 +685,18 @@ var PlayScene = {
     },
 
     pause: function(){
-
-        Phaser.StateManager(this.game, this);
-        var estadoactual = this.game.state.current;
+        this.pausestate = true;
+        //Phaser.StateManager(this.game, this);
+        //var estadoactual = this.game.state.current;
        // this.game.state.add(estadoactual,'pause', true);
         //Phaser.StateManager#pause();
-        //this.menu = new menu(this.game);
-        //this.game.StateManager.add(this, 'pause', true);
+        this.menu = new menu(this.game);
         
-        this.game.state.start('pause');
+        //this.game.StateManager.add('juegocomenzado', this, false);
+       // this.game.StateManager.add('pause', pauseScene, true);
+
+
+        //this.game.state.start('pause');
 
     },
 
@@ -737,4 +758,44 @@ function pausar(){
 
 module.exports = PlayScene;
 
+},{}],6:[function(require,module,exports){
+var victoryScene = {
+    create: function () {
+        console.log("Victory");
+        var button = this.game.add.button(400, 300,
+            'button',this.actionOnClick, this, 2, 1, 0);
+
+        button.anchor.set(0.5);
+
+        var goText = this.game.add.text(400, 100, "Victory");
+
+        var text = this.game.add.text(0, 0, "Restart");
+        text.anchor.set(0.5);
+        goText.anchor.set(0.5);
+        button.addChild(text);
+        
+        //TODO 8 crear un boton con el texto 'Return Main Menu' que nos devuelva al menu del juego.
+        var button2 = this.game.add.button(400, 400,
+                                          'button',
+                                          this.click2, 
+                                          this, 2, 1, 0);
+        button2.anchor.set(0.5);
+        var text2 = this.game.add.text(0, 0, "Return Menu");
+        text2.anchor.set(0.5);
+        button2.addChild(text2);
+    },
+    
+    //TODO 7 declarar el callback del boton.
+    actionOnClick: function(){
+        this.game.state.start('play');
+    },
+
+    //Callback del otro botón (punto 8)
+    click2: function(){
+        //this.game.state.start('preloader');
+        this.game.state.start('menu');
+    }
+};
+
+module.exports = victoryScene;
 },{}]},{},[2]);
