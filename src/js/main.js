@@ -40,11 +40,14 @@ var PreloaderScene = {
     this.game.load.image('tiles','images/simples_pimples.png');//
     //Carga del enemigo
     this.game.load.image('enemy', 'images/enemy.png');
+    this.game.load.image('lava','images/lava.png');
+
     //Carga de la cruz
     this.game.load.image('cross', 'images/cross.png');
     this.game.load.atlas('rush', 'images/rush_spritesheet.png', 'images/rush_spritesheet.json', 
       Phaser.Loader.TEXTURE_ATLAS_JSON_HASH);
-   this.game.load.image('God', 'images/god.png');
+    this.game.load.image('God', 'images/god.png');
+    this.game.load.image('muffin','images/muffin.png');
     //MENU
     this.game.load.image('menu', 'images/menu.png');
 

@@ -80,11 +80,14 @@ var PreloaderScene = {
     this.game.load.image('tiles','images/simples_pimples.png');//
     //Carga del enemigo
     this.game.load.image('enemy', 'images/enemy.png');
+    this.game.load.image('lava','images/lava.png');
+
     //Carga de la cruz
     this.game.load.image('cross', 'images/cross.png');
     this.game.load.atlas('rush', 'images/rush_spritesheet.png', 'images/rush_spritesheet.json', 
       Phaser.Loader.TEXTURE_ATLAS_JSON_HASH);
-   this.game.load.image('God', 'images/god.png');
+    this.game.load.image('God', 'images/god.png');
+    this.game.load.image('muffin','images/muffin.png');
     //MENU
     this.game.load.image('menu', 'images/menu.png');
 
@@ -295,7 +298,6 @@ CelestialCross.prototype.move = function(character){
         this.y = character.y;
         this.angle += 20;
     }
-
     return false;
 }
 ////////////////////////////////////////////////////////////
@@ -311,8 +313,165 @@ God.prototype.checkWin = function(game,Teresa){
         game.state.start('victory');
     });
 }
+////////////////////////MUFFIN///////////////////////////////
+function EcstasyMuffin(game, x, y){
+    Phaser.Sprite.call(this, game, x, y ,'muffin');
+    game.add.existing(this);
+    this.scale.setTo(0.2,0.2);
+    game.physics.arcade.enable(this);
+}
+EcstasyMuffin.prototype = Object.create(Phaser.Sprite.prototype);
+EcstasyMuffin.prototype.constructor = EcstasyMuffin;
+EcstasyMuffin.prototype.checkTeresa = function(game,Teresa){
+    var tolo = false;
+    game.physics.arcade.overlap(Teresa, this, function (obj1, obj2){
+        obj2.destroy();
+        tolo = true;
+    });
+    return tolo;
+}
 
-////////////////////////TERESA////////////////////
+////////////////////////TERESA///////////////////////////////
+function Teresa (game, x, y){
+    Phaser.Sprite.call(this, game, x,y,'rush');
+    game.add.existing(this);
+
+    //Variables del player
+    this._speed = 250, //velocidad del player
+    this._jumpSpeed = 400, //velocidad de salto
+    this._jumpHight = 100, //altura máxima del salto.
+    this._playerState = PlayerState.STOP, //estado del player
+    this._direction = Direction.NONE,  //dirección inicial del player. NONE es ninguna dirección.
+    this._lanzamiento = false,//controla el lanzamiento de la cruz
+    /////Estado ecstasy
+    this.ecstasy = false;
+
+    //Añade las animaciones
+    this.animations.add('run',
+        Phaser.Animation.generateFrameNames('rush_run',1,5,'',2),10,true);
+    this.animations.add('stop',
+        Phaser.Animation.generateFrameNames('rush_idle',1,1,'',2),0,false);
+    this.animations.add('jump',
+        Phaser.Animation.generateFrameNames('rush_jump',2,2,'',2),0,false);
+}
+
+Teresa.prototype = Object.create(Phaser.Sprite.prototype);
+Teresa.prototype.constructor = Teresa;
+Teresa.prototype.transitionFrames = function(collisionWithTilemap,movement, game){
+    switch(this._playerState)
+        {
+            case PlayerState.STOP:
+            case PlayerState.RUN:
+                if(this.isJumping(collisionWithTilemap, game)){
+                    this._playerState = PlayerState.JUMP;
+                    this._initialJumpHeight = this.y;
+                    this.animations.play('jump');
+                }
+                else{
+                    if(movement !== Direction.NONE){
+                        this._playerState = PlayerState.RUN;
+                        this.animations.play('run');
+                    }
+                    else{
+                        this._playerState = PlayerState.STOP;
+                        this.animations.play('stop');
+                    }
+                }    
+                break;
+                
+            case PlayerState.JUMP:
+                
+                var currentJumpHeight = this.y - this._initialJumpHeight;
+                this._playerState = (currentJumpHeight*currentJumpHeight < this._jumpHight*this._jumpHight && !collisionWithTilemap)
+                    ? PlayerState.JUMP : PlayerState.FALLING;
+                break;
+                
+            case PlayerState.FALLING:
+                if(this.isStanding()){
+                    if(movement !== Direction.NONE){
+                        this._playerState = PlayerState.RUN;
+                        this.animations.play('run');
+                    }
+                    else{
+                        this._playerState = PlayerState.STOP;
+                        this.animations.play('stop');
+                    }
+                }
+                break;     
+        }
+        if(this._playerState !== PlayerState.JUMP && !this.isStanding())
+            this._playerState = PlayerState.FALLING;
+}
+Teresa.prototype.statesManag = function(movement,moveDirection){
+    ////////////////STATES////////////////////////
+    switch(this._playerState){
+            
+        case PlayerState.STOP:
+            moveDirection.x = 0;
+            break;
+        case PlayerState.JUMP:
+        case PlayerState.RUN:
+
+        case PlayerState.FALLING:
+            if(movement === Direction.RIGHT){
+                moveDirection.x = this._speed;
+                if(this.scale.x < 0)
+                    this.scale.x *= -1;
+            }
+            else if(movement === Direction.LEFT){
+                moveDirection.x = -this._speed;
+                if(this.scale.x > 0)
+                    this.scale.x *= -1; 
+            }
+            if(this._playerState === PlayerState.JUMP)
+                moveDirection.y = -this._jumpSpeed;
+            else if(this._playerState === PlayerState.FALLING)
+                moveDirection.y = this._jumpSpeed;//0;
+            break;    
+    };
+}
+Teresa.prototype.isStanding = function(){
+    return this.body.blocked.down || this.body.touching.down;
+}
+        
+Teresa.prototype.isJumping = function(collisionWithTilemap,game){
+    return this.canJump(collisionWithTilemap) && 
+        game.input.keyboard.isDown(Phaser.Keyboard.UP);
+}
+Teresa.prototype.canJump = function(collisionWithTilemap){
+    return this.isStanding() && collisionWithTilemap; //|| this._jamping; //ESTO PUEDE SERVIR PARA ALGO
+}
+
+Teresa.prototype.onPlayerFell = function(game){
+    //TODO 6 Carga de 'gameOver';
+    game.state.start('gameOver');
+}
+
+Teresa.prototype.checkPlayerDmg = function(collisionWithEnemy, game){
+    if(game.physics.arcade.collide(this, this.death) || collisionWithEnemy){
+        this._lanzamiento = false;
+        this.onPlayerFell(game);
+        this._playerState = PlayerState.STOP;
+    }
+}
+//MOVE PLAYER
+Teresa.prototype.movement = function(point, xMin, xMax){
+    this.body.velocity = point;// * this.game.time.elapseTime;
+    if((this.x < xMin && point.x < 0)|| (this.x > xMax && point.x > 0))
+        this.body.velocity.x = 0;
+
+}
+Teresa.prototype.ecstasyExplosion = function(enemies){
+    var self = this;
+    if (this.ecstasy === true){
+        enemies.forEach(function (aux){
+            //Lo podemos hacer circular, que mola más
+            if (aux.x < self.x + 300 && aux.y < self.y + 300)
+                aux.kill();
+        });
+        this.ecstasy =false;//ecstasy = false;
+    }
+}
 
 ///////////////////////ENEMIGO//////////////////////////////
 function Enemy(x, y, sprite, game, dist){
@@ -375,38 +534,52 @@ EnemyBird.prototype.collisionCross = function(game,cross){
     });
 }
 
+////////////////SUELO DEL INFIERNO//////////////////////
+function HellFloor(game,y, god){
+    Phaser.Sprite.call(this, game, game.world.centerX, y, 'lava');
+    game.add.existing(this);
+    game.physics.arcade.enable(this);
+    this.anchor.setTo(0.5);
+    this.scale.setTo(2.5,2.5);
+
+    var time = 4000;
+    this.HellFloorTween= game.add.tween(this).to({
+        y:god
+    }, 60000,Phaser.Linear,true, 1,100,false);
+}
+HellFloor.prototype = Object.create(Phaser.Sprite.prototype);
+HellFloor.prototype.constructor = HellFloor;
+HellFloor.prototype.checkTeresa = function(game,Teresa){
+    game.physics.arcade.overlap(Teresa, this, function (obj1, obj2) {
+        game.state.start('gameOver');
+    });
+}
+
 /////////BOTON 
-        function up() {
-            console.log('button up', arguments);
-        }
+function up() {
+    console.log('button up', arguments);
+}
 
-        function over() {
-            console.log('button over');
-        }
+function over() {
+    console.log('button over');
+}
 
-        function out() {
-            console.log('button out');
-        }
+function out() {
+    console.log('button out');
+}
 
-        function actionOnClick () {
-
-            background.visible =! background.visible;
-
-        }
+function actionOnClick () {
+    background.visible =! background.visible;
+}
 /////////////////PLAY SCENE///////////////////////
 var PlayScene = {
     _Teresa: {}, //player
     _enemy2:{},
     enemies:{},
-    _speed: 250, //velocidad del player
-    _jumpSpeed: 400, //velocidad de salto
-    _jumpHight: 100, //altura máxima del salto.
-    _playerState: PlayerState.STOP, //estado del player
-    _direction: Direction.NONE,  //dirección inicial del player. NONE es ninguna dirección.
-    _lanzamiento: false,//controla el lanzamiento de la cruz
     menu:{},
     pausestate: false,
     god:{},
+    hellFloor:{},
 
     create: function () {
 
@@ -420,27 +593,30 @@ var PlayScene = {
         button.onInputOut.add(out, this);
         button.onInputUp.add(up, this);
 
-
-
-        //Creamos al player con un sprite por defecto.
         this.game.physics.startSystem(Phaser.Physics.ARCADE);
-
-        //TODO 5 Creamos a rush 'rush'  con el sprite por defecto en el 10, 10 con la animación por defecto 'rush_idle01'
-        this._Teresa = this.game.add.sprite(100,4700,'rush');
-                this.god = new God(this._Teresa.x+40, this._Teresa.y, 'God',this.game);
+        //Creamos al player con un sprite por defecto.
+        this._Teresa = new Teresa (this.game, 100, 4700);
+        this._Muffin = new EcstasyMuffin(this.game, 200, 4700)
 
         //Creo la cruz de Santa Teresa
         this.cross = new CelestialCross(this._Teresa,'cross',this.game);
 
-        //TODO 4: Cargar el tilemap 'tilemap' y asignarle al tileset 'patrones' la imagen de sprites 'tiles'
+        ///Dios
+        this.god = new God(this._Teresa.x+40, 3000, 'God',this.game);
+
+        //Hellfloor  
+        this.hellFloor = new HellFloor(this.game,4800, this.god.y);
+        //Map
         this.map = this.game.add.tilemap('tilemap');
         this.map.addTilesetImage('patrones','tiles');
 
-        //Creacion de las layers
+        //Creacion de las LAYERS
         this.backgroundLayer = this.map.createLayer('BackgroundLayer');
         this.groundLayer = this.map.createLayer('GroundLayer');
-        //plano de muerte
+
+        //Plano de MUERTE
         this.death = this.map.createLayer('Death');
+
         //Colisiones con el plano de muerte y con el plano de muerte y con suelo.
         this.map.setCollisionBetween(1, 5000, true, 'Death');
         this.map.setCollisionBetween(1, 5000, true, 'GroundLayer');
@@ -454,21 +630,15 @@ var PlayScene = {
         this.groundLayer.resizeWorld(); //resize world and adjust to the screen
           
         //nombre de la animación, frames, framerate, isloop
-        this._Teresa.animations.add('run',
-            Phaser.Animation.generateFrameNames('rush_run',1,5,'',2),10,true);
-        this._Teresa.animations.add('stop',
-            Phaser.Animation.generateFrameNames('rush_idle',1,1,'',2),0,false);
-        this._Teresa.animations.add('jump',
-            Phaser.Animation.generateFrameNames('rush_jump',2,2,'',2),0,false);
+        
         this.configure();
 
-
-        //Introduzco al enemigo
+        //Introduzco a los enemigos
         this.enemies = this.game.add.group();
         this.enemies.enableBody = true;
 
         for (var i = 0; i < 2; i++) {
-            var enemy = new Enemy(130+ 30*i, 250, 'enemy', this.game,290);
+            var enemy = new Enemy(240+ 30*i, 4700 - 20*i, 'enemy', this.game,290);
             this.enemies.add(enemy);
         }
 
@@ -479,6 +649,7 @@ var PlayScene = {
     //IS called one per frame.
     update: function () {
         this.GetInput();
+        
         var moveDirection = new Phaser.Point(0, 0);
         var collisionWithTilemap = this.game.physics.arcade.collide(this._Teresa, this.groundLayer);
         var enemyStanding = this.game.physics.arcade.collide(this.enemies, this.groundLayer);
@@ -488,147 +659,49 @@ var PlayScene = {
         var collisionWithEnemyBird = this.game.physics.arcade.collide(this._Teresa, enemy1);
         
        
+
+        var movement = this.GetMovement();
+
+        this._Teresa.transitionFrames(collisionWithTilemap, movement, this.game);
+        this._Teresa.statesManag(movement,moveDirection);
+        var launch; 
+
+
+        ///////////CROSS LAUNCH/////////////////
+        if(this.launches() && !this._Teresa._lanzamiento){
+            this._Teresa._lanzamiento = true;
+            this.cross.setDirection(this._Teresa);
+        }
+        if(this._Teresa._lanzamiento && this.cross.move(this._Teresa))
+            this._Teresa._lanzamiento = false;
+        
         ///////////SI SE LANZA SE MIRA SI COLISIONA CON ENEMIGOS
-        if(this._lanzamiento){        
+        if(this._Teresa._lanzamiento){        
             this.enemies.forEach( function(enemy) {
                 enemy.collisionCross(this.game, this.cross);
             },this);
         }
-        var movement = this.GetMovement();
-
-        ///////////////////////TRANSITIONS//////////////////////
-        switch(this._playerState)
-        {
-            case PlayerState.STOP:
-            case PlayerState.RUN:
-                if(this.isJumping(collisionWithTilemap)){
-                    this._playerState = PlayerState.JUMP;
-                    this._initialJumpHeight = this._Teresa.y;
-                    this._Teresa.animations.play('jump');
-                }
-                else{
-                    if(movement !== Direction.NONE){
-                        this._playerState = PlayerState.RUN;
-                        this._Teresa.animations.play('run');
-                    }
-                    else{
-                        this._playerState = PlayerState.STOP;
-                        this._Teresa.animations.play('stop');
-                    }
-                }    
-                break;
-                
-            case PlayerState.JUMP:
-                
-                var currentJumpHeight = this._Teresa.y - this._initialJumpHeight;
-                this._playerState = (currentJumpHeight*currentJumpHeight < this._jumpHight*this._jumpHight && !collisionWithTilemap)
-                    ? PlayerState.JUMP : PlayerState.FALLING;
-                break;
-                
-            case PlayerState.FALLING:
-                if(this.isStanding()){
-                    if(movement !== Direction.NONE){
-                        this._playerState = PlayerState.RUN;
-                        this._Teresa.animations.play('run');
-                    }
-                    else{
-                        this._playerState = PlayerState.STOP;
-                        this._Teresa.animations.play('stop');
-                    }
-                }
-                break;     
-        }
-        if(this._playerState !== PlayerState.JUMP && !this.isStanding())
-            this._playerState = PlayerState.FALLING;
-
-        /////////////////////////////////////////////////////////////////////
-
-
-        ////////////////STATES////////////////////////
-        switch(this._playerState){
-                
-            case PlayerState.STOP:
-                moveDirection.x = 0;
-                break;
-            case PlayerState.JUMP:
-            case PlayerState.RUN:
-
-            case PlayerState.FALLING:
-                if(movement === Direction.RIGHT){
-                    moveDirection.x = this._speed;
-                    if(this._Teresa.scale.x < 0)
-                        this._Teresa.scale.x *= -1;
-                }
-                else if(movement === Direction.LEFT){
-                    moveDirection.x = -this._speed;
-                    if(this._Teresa.scale.x > 0)
-                        this._Teresa.scale.x *= -1; 
-                }
-                if(this._playerState === PlayerState.JUMP)
-                    moveDirection.y = -this._jumpSpeed;
-                else if(this._playerState === PlayerState.FALLING)
-                    moveDirection.y = this._jumpSpeed;//0;
-                break;    
-        }
-        
-        ///////////CROSS LAUNCH/////////////////
-
-        if(this.launches() && !this._lanzamiento){
-            this._lanzamiento = true;
-            this.cross.setDirection(this._Teresa);
-        }
-        if(this._lanzamiento)
-            if(this.cross.move(this._Teresa))
-                this._lanzamiento = false;
 
         ////////////////////////////////////////
+        if(this._Muffin.checkTeresa(this.game,this._Teresa)){
+            this._Teresa.ecstasy = true;
+        }
 
         ////////////MOVEMENT PLAYER////////////
-        this.movement(moveDirection,50,
+        this._Teresa.movement(moveDirection,50,
             this.backgroundLayer.layer.widthInPixels*this.backgroundLayer.scale.x - 10);
-        /*
-        this.enemies.forEach(function (aux){
-            aux.move(10,300);
-        });
-*/
 
-        this.checkPlayerDmg(collisionWithEnemyBird);
+        ////////COLISION/////
 
-        this.checkPlayerDmg(collisionWithEnemy);
+        this._Muffin.checkTeresa(this.game,this._Teresa);
+        this._Teresa.checkPlayerDmg(collisionWithEnemy,this.game);
         this.god.checkWin(this.game,this._Teresa);
+        this.hellFloor.checkTeresa(this.game, this._Teresa);
 
         //console.log(this._playerState);
         
     },
     
-    
-    canJump: function(collisionWithTilemap){
-        return this.isStanding() && collisionWithTilemap; //|| this._jamping; //ESTO PUEDE SERVIR PARA ALGO
-    },
-    
-    onPlayerFell: function(){
-        //TODO 6 Carga de 'gameOver';
-        this.game.state.start('gameOver');
-    },
-    
-    checkPlayerDmg: function(collisionWithEnemy){
-        if(this.game.physics.arcade.collide(this._Teresa, this.death) || collisionWithEnemy){
-            this._lanzamiento = false;
-            this.onPlayerFell();
-            this._playerState = PlayerState.STOP;
-        }
-
-    },
-        
-    isStanding: function(){
-        return this._Teresa.body.blocked.down || this._Teresa.body.touching.down;
-    },
-        
-    isJumping: function(collisionWithTilemap){
-        return this.canJump(collisionWithTilemap) && 
-            this.game.input.keyboard.isDown(Phaser.Keyboard.UP);
-    },
-
     launches:function(){
         return this.game.input.keyboard.isDown(Phaser.Keyboard.SPACEBAR);
     },
@@ -649,6 +722,12 @@ var PlayScene = {
     GetInput:function(){
         if(this.game.input.keyboard.isDown(Phaser.Keyboard.ESC))
             this.pause();
+
+        else if(this.game.input.keyboard.isDown(Phaser.Keyboard.E) && this._Teresa.ecstasy){
+            this._Teresa.ecstasyExplosion(this.enemies);
+
+        }
+
     },
 
     //CONFIGURE THE SCENE
@@ -667,16 +746,6 @@ var PlayScene = {
         this._Teresa.body.velocity.x = 0;
         this.game.camera.follow(this._Teresa);
     },
-
-    //MOVE PLAYER
-    movement: function(point, xMin, xMax){
-        this._Teresa.body.velocity = point;// * this.game.time.elapseTime;
-        
-        if((this._Teresa.x < xMin && point.x < 0)|| (this._Teresa.x > xMax && point.x > 0))
-            this._Teresa.body.velocity.x = 0;
-
-    },
-    
     //DESTRUYE LOS RECURSOS
     destroy: function(){
         this.tilemap.destroy();
@@ -685,15 +754,16 @@ var PlayScene = {
     },
 
     pause: function(){
-        this.pausestate = true;
+        //this.pausestate = true;
         //Phaser.StateManager(this.game, this);
         //var estadoactual = this.game.state.current;
        // this.game.state.add(estadoactual,'pause', true);
         //Phaser.StateManager#pause();
-        this.menu = new menu(this.game);
+        //this.menu = new menu(this.game);
         
         //this.game.StateManager.add('juegocomenzado', this, false);
        // this.game.StateManager.add('pause', pauseScene, true);
+        this.game.paused = true;
 
 
         //this.game.state.start('pause');
@@ -704,9 +774,7 @@ var PlayScene = {
         // Only act if paused
         if(this.game.paused){
             // Unpause the game
-            this.pausestate = false;
             this.game.paused = false;
-            this.menu.destroy();
         }
     }
 
