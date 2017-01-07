@@ -88,6 +88,7 @@ var PreloaderScene = {
       Phaser.Loader.TEXTURE_ATLAS_JSON_HASH);
     this.game.load.image('God', 'images/god.png');
     this.game.load.image('muffin','images/muffin.png');
+    this.game.load.image('buttonNew','images/buttonNew.png');
     //MENU
     this.game.load.image('menu', 'images/menu.png');
 
@@ -539,7 +540,7 @@ function HellFloor(game,y, god){
     Phaser.Sprite.call(this, game, game.world.centerX, y, 'lava');
     game.add.existing(this);
     game.physics.arcade.enable(this);
-    this.anchor.setTo(0.5);
+    //this.anchor.setTo(0.5);
     this.scale.setTo(2.5,2.5);
 
     var time = 4000;
@@ -605,7 +606,7 @@ var PlayScene = {
         this.god = new God(this._Teresa.x+40, 3000, 'God',this.game);
 
         //Hellfloor  
-        this.hellFloor = new HellFloor(this.game,4800, this.god.y);
+        this.hellFloor = new HellFloor(this.game,5500, this.god.y);
         //Map
         this.map = this.game.add.tilemap('tilemap');
         this.map.addTilesetImage('patrones','tiles');
@@ -754,12 +755,7 @@ var PlayScene = {
     },
 
     pause: function(){
-        //this.pausestate = true;
-        //Phaser.StateManager(this.game, this);
-        //var estadoactual = this.game.state.current;
-       // this.game.state.add(estadoactual,'pause', true);
-        //Phaser.StateManager#pause();
-        //this.menu = new menu(this.game);
+        this.menu = new menu(this.game);
         
         //this.game.StateManager.add('juegocomenzado', this, false);
        // this.game.StateManager.add('pause', pauseScene, true);
@@ -775,6 +771,7 @@ var PlayScene = {
         if(this.game.paused){
             // Unpause the game
             this.game.paused = false;
+            this.menu.destroy();
         }
     }
 
@@ -783,46 +780,51 @@ var PlayScene = {
 function menu(game){
 
     //////CREO EL MENU
-    this.button = game.add.button(400, 300,
-        'button', actionOnClick, this, 2, 1, 0);
-
-    this.button.onInputOver.add(actionOnClick,this);
+    /*this.button = game.add.button(game.camera.x + 400, game.camera.y + 300,
+        'button', actionOnClick, this, 2, 1, 0);*/
+    this.button = game.add.sprite(game.camera.x + 400, game.camera.y + 300, 'buttonNew');
+    //Para poder pulsarse en pausa
+    this.button.inputEnabled = true;
+    game.input.onDown.add(actionOnClick, this);
+    //this.button.events.onInputUp.add(actionOnClick, this);
+    //this.button.onInputOver.add(actionOnClick,this);
 
     this.button.anchor.set(0.5);
-    this.goText = game.add.text(400, 100, "GameOver");
+    this.goText = game.add.text(game.camera.x + 400, game.camera.y + 150, "GameOver");
     this.text = game.add.text(0, 0, "Reset Game");
     this.text.anchor.set(0.5);
     this.goText.anchor.set(0.5);
     this.button.addChild(this.text);
     
     //TODO 8 crear un boton con el texto 'Return Main Menu' que nos devuelva al menu del juego.
-    this.button2 = game.add.button(400, 400, 
-        'button',this.click2, this, 2, 1, 0);
-
+    /*this.button2 = game.add.button(game.camera.x + 400, game.camera.y + 400, 
+        'button',this.click2, this, 2, 1, 0);*/
+    this.button2 = game.add.sprite(game.camera.x + 400, game.camera.y + 500, 'buttonNew');
     this.button2.anchor.set(0.5);
     this.text2 = game.add.text(0, 0, "Return Menu");
     this.text2.anchor.set(0.5);
     this.button2.addChild(this.text2);
+
+    function actionOnClick(event){
+        if(this.button.getBounds().contains(event.x,event.y)){
+            game.paused = false;
+            this.destroy();
+        }
+        else if(this.button2.getBounds().contains(event.x,event.y)){
+            game.paused = false;
+            game.state.start('menu');
+        }
+    }
 }
 menu.prototype.destroy = function(){
-    this.button.destroy();
+    this.button.kill();
     this.goText.destroy();
     this.text.destroy();
-    this.button2.destroy();
+    this.button2.kill();
     this.text2.destroy();
 }
 
-function actionOnClick (){
-    this.game.state.start('play');
-}
-    //Callback del otro botón (punto 8)
-function click2(){
-//this.game.state.start('preloader');
-    this.game.state.start('menu');
-}
-function pausar(){
-    this.pause();
-}
+
 
 module.exports = PlayScene;
 

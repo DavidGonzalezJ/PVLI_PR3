@@ -48,6 +48,7 @@ var PreloaderScene = {
       Phaser.Loader.TEXTURE_ATLAS_JSON_HASH);
     this.game.load.image('God', 'images/god.png');
     this.game.load.image('muffin','images/muffin.png');
+    this.game.load.image('buttonNew','images/buttonNew.png');
     //MENU
     this.game.load.image('menu', 'images/menu.png');
 
