@@ -89,6 +89,8 @@ var PreloaderScene = {
     this.game.load.image('God', 'images/god.png');
     this.game.load.image('muffin','images/muffin.png');
     this.game.load.image('buttonNew','images/buttonNew.png');
+    this.game.load.image('Teresa','images/teresa1.png');
+    
     //MENU
     this.game.load.image('menu', 'images/menu.png');
 
@@ -334,26 +336,27 @@ EcstasyMuffin.prototype.checkTeresa = function(game,Teresa){
 
 ////////////////////////TERESA///////////////////////////////
 function Teresa (game, x, y){
-    Phaser.Sprite.call(this, game, x,y,'rush');
+    Phaser.Sprite.call(this, game, x,y,'Teresa');
     game.add.existing(this);
 
     //Variables del player
     this._speed = 250, //velocidad del player
     this._jumpSpeed = 400, //velocidad de salto
-    this._jumpHight = 100, //altura máxima del salto.
+    this._jumpHight = 0, //Tiempo de salto.
     this._playerState = PlayerState.STOP, //estado del player
     this._direction = Direction.NONE,  //dirección inicial del player. NONE es ninguna dirección.
     this._lanzamiento = false,//controla el lanzamiento de la cruz
+    this.firstjump =true;
     /////Estado ecstasy
     this.ecstasy = false;
-
+/*
     //Añade las animaciones
     this.animations.add('run',
         Phaser.Animation.generateFrameNames('rush_run',1,5,'',2),10,true);
     this.animations.add('stop',
         Phaser.Animation.generateFrameNames('rush_idle',1,1,'',2),0,false);
     this.animations.add('jump',
-        Phaser.Animation.generateFrameNames('rush_jump',2,2,'',2),0,false);
+        Phaser.Animation.generateFrameNames('rush_jump',2,2,'',2),0,false);*/
 }
 
 Teresa.prototype = Object.create(Phaser.Sprite.prototype);
@@ -363,27 +366,33 @@ Teresa.prototype.transitionFrames = function(collisionWithTilemap,movement, game
         {
             case PlayerState.STOP:
             case PlayerState.RUN:
+                this.firstjump = true;
                 if(this.isJumping(collisionWithTilemap, game)){
                     this._playerState = PlayerState.JUMP;
                     this._initialJumpHeight = this.y;
-                    this.animations.play('jump');
+                    //this.animations.play('run');
                 }
                 else{
                     if(movement !== Direction.NONE){
                         this._playerState = PlayerState.RUN;
-                        this.animations.play('run');
+                       // this.animations.play('run');
                     }
                     else{
                         this._playerState = PlayerState.STOP;
-                        this.animations.play('stop');
+                        //this.animations.play('stop');
                     }
                 }    
                 break;
                 
             case PlayerState.JUMP:
                 
+                if(this.firstjump){
+                    this._jumpHight = game.time.now+500;
+                    this.firstjump = false;
+                }
                 var currentJumpHeight = this.y - this._initialJumpHeight;
-                this._playerState = (currentJumpHeight*currentJumpHeight < this._jumpHight*this._jumpHight && !collisionWithTilemap)
+
+                this._playerState = (game.time.now < this._jumpHight && !this.body.touching.down && !this.body.touching.up)
                     ? PlayerState.JUMP : PlayerState.FALLING;
                 break;
                 
@@ -391,11 +400,11 @@ Teresa.prototype.transitionFrames = function(collisionWithTilemap,movement, game
                 if(this.isStanding()){
                     if(movement !== Direction.NONE){
                         this._playerState = PlayerState.RUN;
-                        this.animations.play('run');
+                       // this.animations.play('run');
                     }
                     else{
                         this._playerState = PlayerState.STOP;
-                        this.animations.play('stop');
+                       // this.animations.play('stop');
                     }
                 }
                 break;     
@@ -541,7 +550,7 @@ function HellFloor(game,y, god){
     game.add.existing(this);
     game.physics.arcade.enable(this);
     //this.anchor.setTo(0.5);
-    this.scale.setTo(2.5,2.5);
+    this.scale.setTo(1,1);
 
     var time = 4000;
     this.HellFloorTween= game.add.tween(this).to({
@@ -595,22 +604,10 @@ var PlayScene = {
         button.onInputUp.add(up, this);
 
         this.game.physics.startSystem(Phaser.Physics.ARCADE);
-        //Creamos al player con un sprite por defecto.
-        this._Teresa = new Teresa (this.game, 100, 4700);
-        this._Muffin = new EcstasyMuffin(this.game, 200, 4700)
 
-        //Creo la cruz de Santa Teresa
-        this.cross = new CelestialCross(this._Teresa,'cross',this.game);
-
-        ///Dios
-        this.god = new God(this._Teresa.x+40, 3000, 'God',this.game);
-
-        //Hellfloor  
-        this.hellFloor = new HellFloor(this.game,5500, this.god.y);
         //Map
         this.map = this.game.add.tilemap('tilemap');
         this.map.addTilesetImage('patrones','tiles');
-
         //Creacion de las LAYERS
         this.backgroundLayer = this.map.createLayer('BackgroundLayer');
         this.groundLayer = this.map.createLayer('GroundLayer');
@@ -625,26 +622,40 @@ var PlayScene = {
           
         //Cambia la escala a x3.
         this.groundLayer.setScale(3,3);
-        this.backgroundLayer.setScale(5,5);
+        this.backgroundLayer.setScale(3,3);
         this.death.setScale(3,3);
          
         this.groundLayer.resizeWorld(); //resize world and adjust to the screen
           
         //nombre de la animación, frames, framerate, isloop
-        
-        this.configure();
 
+        //Creamos al player con un sprite por defecto.
+        this._Teresa = new Teresa (this.game, 100, 2928);
+        this._Muffin = new EcstasyMuffin(this.game, 200, 2928)
+
+        //Creo la cruz de Santa Teresa
+        this.cross = new CelestialCross(this._Teresa,'cross',this.game);
+
+        ///Dios
+        this.god = new God(1620, 200, 'God',this.game);
+        this.god.scale.setTo(0.25);
+
+        //Hellfloor  
+        this.hellFloor = new HellFloor(this.game,3700, this.god.y);
+  
         //Introduzco a los enemigos
         this.enemies = this.game.add.group();
         this.enemies.enableBody = true;
 
         for (var i = 0; i < 2; i++) {
-            var enemy = new Enemy(240+ 30*i, 4700 - 20*i, 'enemy', this.game,290);
+            var enemy = new Enemy(240+30*i, 2928-20*i, 'enemy', this.game,290);
             this.enemies.add(enemy);
         }
 
         enemy1 = new EnemyBird(0, this.game, 100, 500);
         this.enemies.add(enemy1);
+
+        this.configure();
     },
 
     //IS called one per frame.
@@ -734,17 +745,19 @@ var PlayScene = {
     //CONFIGURE THE SCENE
     configure: function(){
 
-        this.game.world.setBounds(0, 0, 1000, 4800);
+        this.game.world.setBounds(0, 0, 2300, 3020);
         //this.game.physics.startSystem(Phaser.Physics.ARCADE);
         this.game.stage.backgroundColor = '#a920ff';
         this.game.physics.arcade.enable(this._Teresa,this._enemy2);
         
         this._Teresa.body.bounce.y = 0;
         //Creo que deberíamos quitar la gravedad y controlarlo nosotros
-        this._Teresa.body.gravity.y = 1;
+        this._Teresa.body.gravity.y = 250;
         this._Teresa.body.gravity.x = 0;
         //Este creo que no es necesario
         this._Teresa.body.velocity.x = 0;
+        this._Teresa.scale.setTo(1.5,1);
+
         this.game.camera.follow(this._Teresa);
     },
     //DESTRUYE LOS RECURSOS

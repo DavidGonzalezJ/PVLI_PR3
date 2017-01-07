@@ -49,6 +49,8 @@ var PreloaderScene = {
     this.game.load.image('God', 'images/god.png');
     this.game.load.image('muffin','images/muffin.png');
     this.game.load.image('buttonNew','images/buttonNew.png');
+    this.game.load.image('Teresa','images/teresa1.png');
+    
     //MENU
     this.game.load.image('menu', 'images/menu.png');
 
