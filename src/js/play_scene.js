@@ -323,6 +323,26 @@ EnemyBird.prototype.collisionCross = function(game,cross){
     });
 }
 
+////////////////TRIGGER DEL SUELO DEL INFIERNO//////////
+function HellTrigger(game, y){
+    Phaser.Sprite.call(this, game, 1200, y, 'muffin');
+    this.anchor.setTo(0.5);
+    //this.scale.setTo(0.5);
+    game.add.existing(this);
+    game.physics.arcade.enable(this);
+    this.renderable = false;
+}
+HellTrigger.prototype = Object.create(Phaser.Sprite.prototype);
+HellTrigger.prototype.constructor = HellTrigger;
+HellTrigger.prototype.checkColision = function(game,Teresa){
+    var col = false;
+    game.physics.arcade.overlap(Teresa, this, function (obj1, obj2) {
+        obj2.kill();
+        col = true;
+    });
+    return col;
+}
+
 ////////////////SUELO DEL INFIERNO//////////////////////
 function HellFloor(game,y, god){
     Phaser.Sprite.call(this, game, game.world.centerX, y, 'lava');
@@ -369,6 +389,7 @@ var PlayScene = {
     pausestate: false,
     god:{},
     hellFloor:{},
+    FloorIsHere:false,
 
     create: function () {
 
@@ -410,6 +431,8 @@ var PlayScene = {
 
         //Creamos al player con un sprite por defecto.
         this._Teresa = new Teresa (this.game, 100, 2928);
+
+        //Posteriormente haremos que cambie el fondo si se ha comido la magdalena
         this._Muffin = new EcstasyMuffin(this.game, 200, 2928)
 
         //Creo la cruz de Santa Teresa
@@ -419,8 +442,11 @@ var PlayScene = {
         this.god = new God(1620, 200, 'God',this.game);
         this.god.scale.setTo(0.25);
 
+        //Trigger del HellFloor
+        this.hellFloorTrigger = new HellTrigger(this.game,2880,this.god.y);
+
         //Hellfloor  
-        this.hellFloor = new HellFloor(this.game,3700, this.god.y);
+        //this.hellFloor = new HellFloor(this.game,3700, this.god.y);
   
         //Introduzco a los enemigos
         this.enemies = this.game.add.group();
@@ -445,7 +471,7 @@ var PlayScene = {
         var collisionWithTilemap = this.game.physics.arcade.collide(this._Teresa, this.groundLayer);
         var enemyStanding = this.game.physics.arcade.collide(this.enemies, this.groundLayer);
         var collisionWithEnemy = this.game.physics.arcade.collide(this._Teresa, this.enemies);
-
+        //var collisionWithTRigger = this.game.physics.arcade.collide(this._Teresa, this.hellFloorTrigger);
         ///NO UTILIZADO AUN
         var collisionWithEnemyBird = this.game.physics.arcade.collide(this._Teresa, enemy1);
         
@@ -487,7 +513,12 @@ var PlayScene = {
         this._Muffin.checkTeresa(this.game,this._Teresa);
         this._Teresa.checkPlayerDmg(collisionWithEnemy,this.game);
         this.god.checkWin(this.game,this._Teresa);
-        this.hellFloor.checkTeresa(this.game, this._Teresa);
+        if (this.hellFloorTrigger.checkColision(this.game, this._Teresa)){
+            this.hellFloor = new HellFloor(this.game,3200, this.god.y);
+            this.FloorIsHere = true;
+        }
+        if(this.FloorIsHere)
+            this.hellFloor.checkTeresa(this.game, this._Teresa);
 
         //console.log(this._playerState);
         
@@ -583,7 +614,7 @@ function menu(game){
 
     this.button.anchor.set(0.5);
     this.goText = game.add.text(game.camera.x + 400, game.camera.y + 150, "GameOver");
-    this.text = game.add.text(0, 0, "Reset Game");
+    this.text = game.add.text(0, 0, "Continue");
     this.text.anchor.set(0.5);
     this.goText.anchor.set(0.5);
     this.button.addChild(this.text);
