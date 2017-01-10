@@ -311,7 +311,7 @@ Enemy.prototype.collisionCross = function(game,cross){
     this.scale.setTo(0.1,0.1);
     var time = 4000;
     this.birdTween= game.add.tween(this).to({
-        x:this.x + x
+        x:this.x + 120
     }, time*0.9,Phaser.Easing.Sinusoidal.InOut, true, 1,100,true);
 }
 EnemyBird.prototype = Object.create(Phaser.Sprite.prototype);
@@ -405,6 +405,8 @@ var PlayScene = {
 
         this.game.physics.startSystem(Phaser.Physics.ARCADE);
 
+        var tile = 48;//Para situar enemigos y muffins
+
         //Map
         this.map = this.game.add.tilemap('tilemap');
         this.map.addTilesetImage('patrones','tiles');
@@ -433,7 +435,9 @@ var PlayScene = {
         this._Teresa = new Teresa (this.game, 100, 2928);
 
         //Posteriormente haremos que cambie el fondo si se ha comido la magdalena
-        this._Muffin = new EcstasyMuffin(this.game, 200, 2928)
+        //this._Muffin1 = new EcstasyMuffin(this.game, 42*tile, 2928);
+        this._Muffin = new EcstasyMuffin(this.game, 44*tile+20, 1670);
+        //this._Muffin3 = new EcstasyMuffin(this.game, 37*tile, 800);
 
         //Creo la cruz de Santa Teresa
         this.cross = new CelestialCross(this._Teresa,'cross',this.game);
@@ -444,21 +448,44 @@ var PlayScene = {
 
         //Trigger del HellFloor
         this.hellFloorTrigger = new HellTrigger(this.game,2880,this.god.y);
-
-        //Hellfloor  
-        //this.hellFloor = new HellFloor(this.game,3700, this.god.y);
   
         //Introduzco a los enemigos
         this.enemies = this.game.add.group();
         this.enemies.enableBody = true;
-
-        for (var i = 0; i < 2; i++) {
-            var enemy = new Enemy(240+30*i, 2928-20*i, 'enemy', this.game,290);
-            this.enemies.add(enemy);
-        }
-
-        enemy1 = new EnemyBird(0, this.game, 100, 500);
-        this.enemies.add(enemy1);
+        
+        //Introduzco los enemigos voladores
+        this.enemies.add(new EnemyBird(0, this.game, 16*tile, 2840));//
+        this.enemies.add(new EnemyBird(0, this.game, 27*tile, 2840));// Primer demonio castillo
+        this.enemies.add(new EnemyBird(0, this.game, 31*tile, 2150));// Piso 2 izquierda
+        this.enemies.add(new EnemyBird(0, this.game, 36*tile, 2340));// 2
+        this.enemies.add(new EnemyBird(0, this.game, 38*tile, 1680));// 2
+        this.enemies.add(new EnemyBird(0, this.game, 34*tile, 1680));// Piso 3
+        this.enemies.add(new EnemyBird(0, this.game, 27*tile, 1300));// 3
+        this.enemies.add(new EnemyBird(0, this.game, 41*tile, 900));// 3
+        this.enemies.add(new EnemyBird(0, this.game, 35*tile, 800));
+        this.enemies.add(new EnemyBird(0, this.game, 30*tile, 700));// 
+        //Introduzco a los enemigos terrestres
+        this.enemies.add(new Enemy(6*tile, 2928, 'enemy', this.game,200));
+        this.enemies.add(new Enemy(11*tile, 2928, 'enemy', this.game,150));
+        this.enemies.add(new Enemy(14*tile, 2928, 'enemy', this.game,180));
+        this.enemies.add(new Enemy(20*tile, 2928, 'enemy', this.game,50));
+        this.enemies.add(new Enemy(24*tile, 2928, 'enemy', this.game,100));
+        this.enemies.add(new Enemy(28*tile, 2928, 'enemy', this.game,150));
+        this.enemies.add(new Enemy(34*tile, 2928, 'enemy', this.game,50));
+        //this.enemies.add(new Enemy(6*tile, 2928, 'enemy', this.game,60));
+        this.enemies.add(new Enemy(42*tile, 2300, 'enemy', this.game,120));
+        this.enemies.add(new Enemy(29*tile, 2000, 'enemy', this.game,80));
+        this.enemies.add(new Enemy(30*tile, 2300, 'enemy', this.game,80));//Piso 1 plataforma 3
+        this.enemies.add(new Enemy(36*tile, 1950, 'enemy', this.game,200));
+        this.enemies.add(new Enemy(40*tile, 1950, 'enemy', this.game,150));
+        this.enemies.add(new Enemy(31*tile, 1800, 'enemy', this.game,180));
+        this.enemies.add(new Enemy(35*tile, 1800, 'enemy', this.game,150));//
+        this.enemies.add(new Enemy(28*tile, 1200, 'enemy', this.game,60));//
+        this.enemies.add(new Enemy(34*tile, 850, 'enemy', this.game,60));//
+        this.enemies.add(new Enemy(40*tile, 800, 'enemy', this.game,60));//
+        this.enemies.add(new Enemy(43*tile, 700, 'enemy', this.game,150));//
+        this.enemies.add(new Enemy(26*tile, 700, 'enemy', this.game,200));//
+        this.enemies.add(new Enemy(28*tile, 700, 'enemy', this.game,100));//
 
         this.configure();
     },
@@ -473,7 +500,7 @@ var PlayScene = {
         var collisionWithEnemy = this.game.physics.arcade.collide(this._Teresa, this.enemies);
         //var collisionWithTRigger = this.game.physics.arcade.collide(this._Teresa, this.hellFloorTrigger);
         ///NO UTILIZADO AUN
-        var collisionWithEnemyBird = this.game.physics.arcade.collide(this._Teresa, enemy1);
+        //var collisionWithEnemyBird = this.game.physics.arcade.collide(this._Teresa, enemy1);
         
        
 
@@ -519,8 +546,6 @@ var PlayScene = {
         }
         if(this.FloorIsHere)
             this.hellFloor.checkTeresa(this.game, this._Teresa);
-
-        //console.log(this._playerState);
         
     },
     
