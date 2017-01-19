@@ -1,5 +1,8 @@
 var MenuScene = {
     create: function () {
+        this.Judas = this.game.add.audio('Judas');
+        this.Judas.loop = true;
+        this.Judas.play();
         this.game.world.setBounds(0,0,800,600);
         var logo = this.game.add.sprite(this.game.world.centerX, 
                                         this.game.world.centerY, 
@@ -19,6 +22,7 @@ var MenuScene = {
     
     actionOnClick: function(){
         this.game.state.start('preloader');
+        this.Judas.destroy();
     } 
 };
 

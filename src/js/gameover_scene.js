@@ -1,6 +1,8 @@
 var GameOver = {
     create: function () {
         console.log("Game Over");
+        this.sound = this.game.add.audio('GameOverFx');
+        this.sound.play();
         var button = this.game.add.button(400, 300,
                                           'button',
                                           this.actionOnClick, 
@@ -26,12 +28,14 @@ var GameOver = {
     //TODO 7 declarar el callback del boton.
     actionOnClick: function(){
         this.game.state.start('play');
+        this.aleluya.destroy();
     },
 
     //Callback del otro botón (punto 8)
     click2: function(){
         //this.game.state.start('preloader');
         this.game.state.start('menu');
+        this.sound.destroy();
     }
 };
 

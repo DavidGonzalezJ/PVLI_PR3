@@ -2,6 +2,8 @@
 var GameOver = {
     create: function () {
         console.log("Game Over");
+        this.sound = this.game.add.audio('GameOverFx');
+        this.sound.play();
         var button = this.game.add.button(400, 300,
                                           'button',
                                           this.actionOnClick, 
@@ -27,12 +29,14 @@ var GameOver = {
     //TODO 7 declarar el callback del boton.
     actionOnClick: function(){
         this.game.state.start('play');
+        this.aleluya.destroy();
     },
 
     //Callback del otro botón (punto 8)
     click2: function(){
         //this.game.state.start('preloader');
         this.game.state.start('menu');
+        this.sound.destroy();
     }
 };
 
@@ -55,6 +59,7 @@ var BootScene = {
     this.game.load.image('preloader_bar', 'images/preloader_bar.png');
     this.game.load.spritesheet('button', 'images/buttons.png', 168, 70);
     this.game.load.image('logo', 'images/phaser.png');
+    this.game.load.audio('Judas','sounds/Judas.mp3');
   },
 
   create: function () {
@@ -91,6 +96,16 @@ var PreloaderScene = {
     this.game.load.image('buttonNew','images/buttonNew.png');
     this.game.load.image('Teresa','images/teresa1.png');
     
+    //Carga de sonido
+    this.game.load.audio('Problem','sounds/Problem.mp3');
+    this.game.load.audio('Jump','sounds/Jump_07.wav');
+    this.game.load.audio('EatMuffin', 'sounds/PowerUp.mp3');
+    this.game.load.audio('Aleluya', 'sounds/Aleluya.mp3');
+    this.game.load.audio('ThrowFx', 'sounds/Throw.wav');
+    this.game.load.audio('GameOverFx', 'sounds/GameOverSound.wav');
+    this.game.load.audio('Hit', 'sounds/Explosion.wav');
+    this.game.load.audio('Onda', 'sounds/ShockWave.mp3');
+
     //MENU
     this.game.load.image('menu', 'images/menu.png');
 
@@ -155,6 +170,9 @@ function init () {
 },{"./gameover_scene.js":1,"./menu_scene":3,"./pause_scene":4,"./play_scene.js":5,"./victory_scene":6}],3:[function(require,module,exports){
 var MenuScene = {
     create: function () {
+        this.Judas = this.game.add.audio('Judas');
+        this.Judas.loop = true;
+        this.Judas.play();
         this.game.world.setBounds(0,0,800,600);
         var logo = this.game.add.sprite(this.game.world.centerX, 
                                         this.game.world.centerY, 
@@ -174,6 +192,7 @@ var MenuScene = {
     
     actionOnClick: function(){
         this.game.state.start('preloader');
+        this.Judas.destroy();
     } 
 };
 
@@ -311,8 +330,9 @@ function God(x, y, sprite, game){
 }
 God.prototype = Object.create(Phaser.Sprite.prototype);
 God.prototype.constructor = God;
-God.prototype.checkWin = function(game,Teresa){
+God.prototype.checkWin = function(game,Teresa,problem){
     game.physics.arcade.overlap(Teresa, this, function (obj1, obj2) {
+        problem.destroy();
         game.state.start('victory');
     });
 }
@@ -325,7 +345,7 @@ function EcstasyMuffin(game, x, y){
 }
 EcstasyMuffin.prototype = Object.create(Phaser.Sprite.prototype);
 EcstasyMuffin.prototype.constructor = EcstasyMuffin;
-EcstasyMuffin.prototype.checkTeresa = function(game,Teresa){
+EcstasyMuffin.prototype.checkTeresa = function(game,Teresa,problem){
     var tolo = false;
     game.physics.arcade.overlap(Teresa, this, function (obj1, obj2){
         obj2.destroy();
@@ -361,7 +381,7 @@ function Teresa (game, x, y){
 
 Teresa.prototype = Object.create(Phaser.Sprite.prototype);
 Teresa.prototype.constructor = Teresa;
-Teresa.prototype.transitionFrames = function(collisionWithTilemap,movement, game){
+Teresa.prototype.transitionFrames = function(collisionWithTilemap,movement, game, jumpEffect){
     switch(this._playerState)
         {
             case PlayerState.STOP:
@@ -369,6 +389,7 @@ Teresa.prototype.transitionFrames = function(collisionWithTilemap,movement, game
                 this.firstjump = true;
                 if(this.isJumping(collisionWithTilemap, game)){
                     this._playerState = PlayerState.JUMP;
+                    jumpEffect.play();
                     this._initialJumpHeight = this.y;
                     //this.animations.play('run');
                 }
@@ -445,6 +466,7 @@ Teresa.prototype.isStanding = function(){
 }
         
 Teresa.prototype.isJumping = function(collisionWithTilemap,game){
+    //jumpEffect.play();
     return this.canJump(collisionWithTilemap) && 
         game.input.keyboard.isDown(Phaser.Keyboard.UP);
 }
@@ -454,12 +476,14 @@ Teresa.prototype.canJump = function(collisionWithTilemap){
 
 Teresa.prototype.onPlayerFell = function(game){
     //TODO 6 Carga de 'gameOver';
+    //music.destroy();
     game.state.start('gameOver');
 }
 
-Teresa.prototype.checkPlayerDmg = function(collisionWithEnemy, game){
+Teresa.prototype.checkPlayerDmg = function(collisionWithEnemy, game, music){
     if(game.physics.arcade.collide(this, this.death) || collisionWithEnemy){
         this._lanzamiento = false;
+        music.destroy();
         this.onPlayerFell(game);
         this._playerState = PlayerState.STOP;
     }
@@ -471,9 +495,10 @@ Teresa.prototype.movement = function(point, xMin, xMax){
         this.body.velocity.x = 0;
 
 }
-Teresa.prototype.ecstasyExplosion = function(enemies){
+Teresa.prototype.ecstasyExplosion = function(enemies,sound){
     var self = this;
     if (this.ecstasy === true){
+        sound.play();
         enemies.forEach(function (aux){
             //Lo podemos hacer circular, que mola más
             if (aux.x < self.x + 300 && aux.y < self.y + 300)
@@ -507,11 +532,11 @@ function Enemy(x, y, sprite, game, dist){
 
 Enemy.prototype = Object.create(Phaser.Sprite.prototype);
 Enemy.prototype.constructor = Enemy;
-Enemy.prototype.collisionCross = function(game,cross){
+Enemy.prototype.collisionCross = function(game,cross, hitSound){
     game.physics.arcade.overlap(cross, this, function (obj1, obj2) {
         obj2.kill();
         obj1.kill();
-
+        hitSound.play();
         /////FUTURO MARCADOR
         //score += 1;
         //scoreText.text = 'Score: ' + score;
@@ -537,8 +562,9 @@ Enemy.prototype.collisionCross = function(game,cross){
 }
 EnemyBird.prototype = Object.create(Phaser.Sprite.prototype);
 EnemyBird.prototype.constructor = EnemyBird;
-EnemyBird.prototype.collisionCross = function(game,cross){
+EnemyBird.prototype.collisionCross = function(game,cross,hitSound){
     game.physics.arcade.overlap(cross, this, function (obj1, obj2) {
+        hitSound.play();
         obj2.kill();
         obj1.kill();
     });
@@ -579,8 +605,9 @@ function HellFloor(game,y, god){
 }
 HellFloor.prototype = Object.create(Phaser.Sprite.prototype);
 HellFloor.prototype.constructor = HellFloor;
-HellFloor.prototype.checkTeresa = function(game,Teresa){
+HellFloor.prototype.checkTeresa = function(game,Teresa,problem){
     game.physics.arcade.overlap(Teresa, this, function (obj1, obj2) {
+        problem.destroy();
         game.state.start('gameOver');
     });
 }
@@ -623,6 +650,17 @@ var PlayScene = {
         button.onInputOver.add(over, this);
         button.onInputOut.add(out, this);
         button.onInputUp.add(up, this);
+        //AUDIO
+        this.problem = this.game.add.audio('Problem');
+        this.jumpEffect = this.game.add.audio('Jump');
+        this.muffinSound = this.game.add.audio('EatMuffin');
+        this.hitSound = this.game.add.audio('Hit');
+        this.hitSound.volume = 0.4;
+        this.launchSound = this.game.add.audio('ThrowFx');
+        this.ecstasySound = this.game.add.audio('Onda');
+        this.jumpEffect.loop = false;
+        this.problem.play();
+        this.problem.loop = true;
 
         this.game.physics.startSystem(Phaser.Physics.ARCADE);
 
@@ -727,7 +765,7 @@ var PlayScene = {
 
         var movement = this.GetMovement();
 
-        this._Teresa.transitionFrames(collisionWithTilemap, movement, this.game);
+        this._Teresa.transitionFrames(collisionWithTilemap, movement, this.game, this.jumpEffect);
         this._Teresa.statesManag(movement,moveDirection);
         var launch; 
 
@@ -735,21 +773,24 @@ var PlayScene = {
         ///////////CROSS LAUNCH/////////////////
         if(this.launches() && !this._Teresa._lanzamiento){
             this._Teresa._lanzamiento = true;
+             this.launchSound.play();
             this.cross.setDirection(this._Teresa);
         }
-        if(this._Teresa._lanzamiento && this.cross.move(this._Teresa))
+        if(this._Teresa._lanzamiento && this.cross.move(this._Teresa)){
             this._Teresa._lanzamiento = false;
+        }
         
         ///////////SI SE LANZA SE MIRA SI COLISIONA CON ENEMIGOS
         if(this._Teresa._lanzamiento){        
             this.enemies.forEach( function(enemy) {
-                enemy.collisionCross(this.game, this.cross);
+                enemy.collisionCross(this.game, this.cross, this.hitSound);
             },this);
         }
 
         ////////////////////////////////////////
         if(this._Muffin.checkTeresa(this.game,this._Teresa)){
             this._Teresa.ecstasy = true;
+            this.muffinSound.play();
         }
 
         ////////////MOVEMENT PLAYER////////////
@@ -759,14 +800,14 @@ var PlayScene = {
         ////////COLISION/////
 
         this._Muffin.checkTeresa(this.game,this._Teresa);
-        this._Teresa.checkPlayerDmg(collisionWithEnemy,this.game);
-        this.god.checkWin(this.game,this._Teresa);
+        this._Teresa.checkPlayerDmg(collisionWithEnemy,this.game, this.problem);
+        this.god.checkWin(this.game,this._Teresa,this.problem);
         if (this.hellFloorTrigger.checkColision(this.game, this._Teresa)){
             this.hellFloor = new HellFloor(this.game,3200, this.god.y);
             this.FloorIsHere = true;
         }
         if(this.FloorIsHere)
-            this.hellFloor.checkTeresa(this.game, this._Teresa);
+            this.hellFloor.checkTeresa(this.game, this._Teresa, this.problem);
         
     },
     
@@ -792,7 +833,7 @@ var PlayScene = {
             this.pause();
 
         else if(this.game.input.keyboard.isDown(Phaser.Keyboard.E) && this._Teresa.ecstasy){
-            this._Teresa.ecstasyExplosion(this.enemies);
+            this._Teresa.ecstasyExplosion(this.enemies, this.ecstasySound);
 
         }
 
@@ -824,7 +865,7 @@ var PlayScene = {
     },
 
     pause: function(){
-        this.menu = new menu(this.game);
+        this.menu = new menu(this.game, this.problem);
         
         //this.game.StateManager.add('juegocomenzado', this, false);
        // this.game.StateManager.add('pause', pauseScene, true);
@@ -846,7 +887,7 @@ var PlayScene = {
 
 };
 
-function menu(game){
+function menu(game,problem){
 
     //////CREO EL MENU
     /*this.button = game.add.button(game.camera.x + 400, game.camera.y + 300,
@@ -880,7 +921,9 @@ function menu(game){
             this.destroy();
         }
         else if(this.button2.getBounds().contains(event.x,event.y)){
+            problem.destroy();
             game.paused = false;
+
             game.state.start('menu');
         }
     }
@@ -901,6 +944,9 @@ module.exports = PlayScene;
 var victoryScene = {
     create: function () {
         console.log("Victory");
+        this.aleluya = this.game.add.audio('Aleluya');
+        this.aleluya.loop = true;
+        this.aleluya.play();
         var button = this.game.add.button(400, 300,
             'button',this.actionOnClick, this, 2, 1, 0);
 
@@ -927,12 +973,14 @@ var victoryScene = {
     //TODO 7 declarar el callback del boton.
     actionOnClick: function(){
         this.game.state.start('play');
+        this.aleluya.destroy();
     },
 
     //Callback del otro botón (punto 8)
     click2: function(){
         //this.game.state.start('preloader');
         this.game.state.start('menu');
+        this.aleluya.destroy();
     }
 };
 

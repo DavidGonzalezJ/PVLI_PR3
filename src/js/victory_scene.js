@@ -1,6 +1,9 @@
 var victoryScene = {
     create: function () {
         console.log("Victory");
+        this.aleluya = this.game.add.audio('Aleluya');
+        this.aleluya.loop = true;
+        this.aleluya.play();
         var button = this.game.add.button(400, 300,
             'button',this.actionOnClick, this, 2, 1, 0);
 
@@ -27,12 +30,14 @@ var victoryScene = {
     //TODO 7 declarar el callback del boton.
     actionOnClick: function(){
         this.game.state.start('play');
+        this.aleluya.destroy();
     },
 
     //Callback del otro botón (punto 8)
     click2: function(){
         //this.game.state.start('preloader');
         this.game.state.start('menu');
+        this.aleluya.destroy();
     }
 };
 

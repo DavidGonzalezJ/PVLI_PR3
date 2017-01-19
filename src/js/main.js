@@ -15,6 +15,7 @@ var BootScene = {
     this.game.load.image('preloader_bar', 'images/preloader_bar.png');
     this.game.load.spritesheet('button', 'images/buttons.png', 168, 70);
     this.game.load.image('logo', 'images/phaser.png');
+    this.game.load.audio('Judas','sounds/Judas.mp3');
   },
 
   create: function () {
@@ -51,6 +52,16 @@ var PreloaderScene = {
     this.game.load.image('buttonNew','images/buttonNew.png');
     this.game.load.image('Teresa','images/teresa1.png');
     
+    //Carga de sonido
+    this.game.load.audio('Problem','sounds/Problem.mp3');
+    this.game.load.audio('Jump','sounds/Jump_07.wav');
+    this.game.load.audio('EatMuffin', 'sounds/PowerUp.mp3');
+    this.game.load.audio('Aleluya', 'sounds/Aleluya.mp3');
+    this.game.load.audio('ThrowFx', 'sounds/Throw.wav');
+    this.game.load.audio('GameOverFx', 'sounds/GameOverSound.wav');
+    this.game.load.audio('Hit', 'sounds/Explosion.wav');
+    this.game.load.audio('Onda', 'sounds/ShockWave.mp3');
+
     //MENU
     this.game.load.image('menu', 'images/menu.png');
 
