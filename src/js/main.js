@@ -37,20 +37,23 @@ var PreloaderScene = {
 
 /////////////////////CARGA DE RECURSOS////////////////////////
 
-    this.game.load.tilemap('tilemap', 'images/map.json', null, Phaser.Tilemap.TILED_JSON);//
+    this.game.load.image('mapSheet', 'images/TilesetTorre.png');
+    this.game.load.tilemap('tilemap', 'images/map1.json', null, Phaser.Tilemap.TILED_JSON);//
     this.game.load.image('tiles','images/simples_pimples.png');//
     //Carga del enemigo
-    this.game.load.image('enemy', 'images/enemy.png');
-    this.game.load.image('lava','images/lava.png');
+    this.game.load.atlas('Demon','images/Demon.png', 'images/Demon.json', Phaser.Loader.TEXTURE_ATLAS_JSON_HASH);
+    this.game.load.atlas('enemyFly','images/Fly-Enemy.png', 'images/Fly-Enemy.json', Phaser.Loader.TEXTURE_ATLAS_JSON_HASH);
+
+    //this.game.load.image('lava','images/lava.png');
 
     //Carga de la cruz
     this.game.load.image('cross', 'images/cross.png');
-    this.game.load.atlas('rush', 'images/rush_spritesheet.png', 'images/rush_spritesheet.json', 
+    this.game.load.atlas('Teresa', 'images/Teresa.png', 'images/Teresa.json', 
       Phaser.Loader.TEXTURE_ATLAS_JSON_HASH);
     this.game.load.image('God', 'images/god.png');
     this.game.load.image('muffin','images/muffin.png');
     this.game.load.image('buttonNew','images/buttonNew.png');
-    this.game.load.image('Teresa','images/teresa1.png');
+    //this.game.load.image('Teresa','images/teresa1.png');
     
     //Carga de sonido
     this.game.load.audio('Problem','sounds/Problem.mp3');
@@ -61,6 +64,9 @@ var PreloaderScene = {
     this.game.load.audio('GameOverFx', 'sounds/GameOverSound.wav');
     this.game.load.audio('Hit', 'sounds/Explosion.wav');
     this.game.load.audio('Onda', 'sounds/ShockWave.mp3');
+
+    //LAVA
+    this.game.load.atlas('lava', 'images/lava.png', 'images/lava.json', Phaser.Loader.TEXTURE_ATLAS_JSON_HASH);
 
     //MENU
     this.game.load.image('menu', 'images/menu.png');

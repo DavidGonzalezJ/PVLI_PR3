@@ -28,7 +28,6 @@ var GameOver = {
     //TODO 7 declarar el callback del boton.
     actionOnClick: function(){
         this.game.state.start('play');
-        this.aleluya.destroy();
     },
 
     //Callback del otro botón (punto 8)

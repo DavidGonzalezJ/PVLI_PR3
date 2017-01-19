@@ -29,7 +29,6 @@ var GameOver = {
     //TODO 7 declarar el callback del boton.
     actionOnClick: function(){
         this.game.state.start('play');
-        this.aleluya.destroy();
     },
 
     //Callback del otro botón (punto 8)
@@ -81,20 +80,23 @@ var PreloaderScene = {
 
 /////////////////////CARGA DE RECURSOS////////////////////////
 
-    this.game.load.tilemap('tilemap', 'images/map.json', null, Phaser.Tilemap.TILED_JSON);//
+    this.game.load.image('mapSheet', 'images/TilesetTorre.png');
+    this.game.load.tilemap('tilemap', 'images/map1.json', null, Phaser.Tilemap.TILED_JSON);//
     this.game.load.image('tiles','images/simples_pimples.png');//
     //Carga del enemigo
-    this.game.load.image('enemy', 'images/enemy.png');
-    this.game.load.image('lava','images/lava.png');
+    this.game.load.atlas('Demon','images/Demon.png', 'images/Demon.json', Phaser.Loader.TEXTURE_ATLAS_JSON_HASH);
+    this.game.load.atlas('enemyFly','images/Fly-Enemy.png', 'images/Fly-Enemy.json', Phaser.Loader.TEXTURE_ATLAS_JSON_HASH);
+
+    //this.game.load.image('lava','images/lava.png');
 
     //Carga de la cruz
     this.game.load.image('cross', 'images/cross.png');
-    this.game.load.atlas('rush', 'images/rush_spritesheet.png', 'images/rush_spritesheet.json', 
+    this.game.load.atlas('Teresa', 'images/Teresa.png', 'images/Teresa.json', 
       Phaser.Loader.TEXTURE_ATLAS_JSON_HASH);
     this.game.load.image('God', 'images/god.png');
     this.game.load.image('muffin','images/muffin.png');
     this.game.load.image('buttonNew','images/buttonNew.png');
-    this.game.load.image('Teresa','images/teresa1.png');
+    //this.game.load.image('Teresa','images/teresa1.png');
     
     //Carga de sonido
     this.game.load.audio('Problem','sounds/Problem.mp3');
@@ -105,6 +107,9 @@ var PreloaderScene = {
     this.game.load.audio('GameOverFx', 'sounds/GameOverSound.wav');
     this.game.load.audio('Hit', 'sounds/Explosion.wav');
     this.game.load.audio('Onda', 'sounds/ShockWave.mp3');
+
+    //LAVA
+    this.game.load.atlas('lava', 'images/lava.png', 'images/lava.json', Phaser.Loader.TEXTURE_ATLAS_JSON_HASH);
 
     //MENU
     this.game.load.image('menu', 'images/menu.png');
@@ -369,14 +374,21 @@ function Teresa (game, x, y){
     this.firstjump =true;
     /////Estado ecstasy
     this.ecstasy = false;
-/*
+
     //Añade las animaciones
     this.animations.add('run',
-        Phaser.Animation.generateFrameNames('rush_run',1,5,'',2),10,true);
+        Phaser.Animation.generateFrameNames('Run',1,9),10,true);
     this.animations.add('stop',
-        Phaser.Animation.generateFrameNames('rush_idle',1,1,'',2),0,false);
+        Phaser.Animation.generateFrameNames('Run',1,2),1,true);
     this.animations.add('jump',
-        Phaser.Animation.generateFrameNames('rush_jump',2,2,'',2),0,false);*/
+        Phaser.Animation.generateFrameNames('jump',1,7),0,false);
+    this.animations.add('extasis',
+        Phaser.Animation.generateFrameNames('jump',1,7),0,false);
+    this.animations.add('Death',
+        Phaser.Animation.generateFrameNames('Die',0,6),0,false);
+    this.animations.add('Throw',
+        Phaser.Animation.generateFrameNames('Throw',0,1),0,false);
+    //Die,jump,Extasis,Run
 }
 
 Teresa.prototype = Object.create(Phaser.Sprite.prototype);
@@ -391,16 +403,16 @@ Teresa.prototype.transitionFrames = function(collisionWithTilemap,movement, game
                     this._playerState = PlayerState.JUMP;
                     jumpEffect.play();
                     this._initialJumpHeight = this.y;
-                    //this.animations.play('run');
+                    this.animations.play('run');
                 }
                 else{
                     if(movement !== Direction.NONE){
                         this._playerState = PlayerState.RUN;
-                       // this.animations.play('run');
+                        this.animations.play('run');
                     }
                     else{
                         this._playerState = PlayerState.STOP;
-                        //this.animations.play('stop');
+                        this.animations.play('stop');
                     }
                 }    
                 break;
@@ -410,6 +422,7 @@ Teresa.prototype.transitionFrames = function(collisionWithTilemap,movement, game
                 if(this.firstjump){
                     this._jumpHight = game.time.now+500;
                     this.firstjump = false;
+                    this.animations.play('jump');
                 }
                 var currentJumpHeight = this.y - this._initialJumpHeight;
 
@@ -421,11 +434,11 @@ Teresa.prototype.transitionFrames = function(collisionWithTilemap,movement, game
                 if(this.isStanding()){
                     if(movement !== Direction.NONE){
                         this._playerState = PlayerState.RUN;
-                       // this.animations.play('run');
+                        this.animations.play('run');
                     }
                     else{
                         this._playerState = PlayerState.STOP;
-                       // this.animations.play('stop');
+                        this.animations.play('stop');
                     }
                 }
                 break;     
@@ -510,15 +523,17 @@ Teresa.prototype.ecstasyExplosion = function(enemies,sound){
 
 ///////////////////////ENEMIGO//////////////////////////////
 function Enemy(x, y, sprite, game, dist){
-    Phaser.Sprite.call(this, game, x,y,sprite);
+    Phaser.Sprite.call(this, game, x,y+50, 'Demon');
     game.add.existing(this);
-
+    this.animation = this.animations.add('EnemyWalk',Phaser.Animation.generateFrameNames('Walk',0,10),4,true);
+    this.animationDeath = this.animations.add('EnemyDeath',Phaser.Animation.generateFrameNames('Death',0,10),100,false);
+    this.animation.play();
 
     //Posición inicial necesaria para el movimiento
     this.initialPos = this.x;
     this.speed = 150;
-    //Escalado guarro para las pruebas
-    this.scale.setTo(0.1,0.1);
+    this.anchor.setTo(1);
+    //this.scale.setTo(0.1,0.1);
     game.physics.arcade.enable(this);
     this.body.velocity.x = -this.speed;
     this.body.gravity.y = 30;
@@ -533,28 +548,34 @@ function Enemy(x, y, sprite, game, dist){
 Enemy.prototype = Object.create(Phaser.Sprite.prototype);
 Enemy.prototype.constructor = Enemy;
 Enemy.prototype.collisionCross = function(game,cross, hitSound){
+    var self = this;
     game.physics.arcade.overlap(cross, this, function (obj1, obj2) {
-        obj2.kill();
-        obj1.kill();
+        self.animationDeath.play();
         hitSound.play();
+        self.body.enable = false;
         /////FUTURO MARCADOR
         //score += 1;
         //scoreText.text = 'Score: ' + score;
     });
+    self.animationDeath.killOnComplete=true;
 }
+
 ///////////////////////////////////////////////////
 
- function EnemyBird(index, game, x,y){
-    Phaser.Sprite.call(this, game, x, y, 'enemy');
+ function EnemyBird(game, x,y){
+    Phaser.Sprite.call(this, game, x, y, 'enemyFly');
     this.anchor.setTo(0.5);
-    this.name = 'EnemyBird_'+index.toString();
+  
+
+    this.animation = this.animations.add('Fly-Enemy',Phaser.Animation.generateFrameNames('flyEnemy',0,2),6,true);
+    this.animation.play();
 
     game.physics.enable(this, Phaser.Physics.ARCADE);
     this.body.immovable = true;
     this.body.collideWorldBounds = true;
     this.body.allowGravity =false;
 
-    this.scale.setTo(0.1,0.1);
+    this.scale.setTo(0.5,0.5);
     var time = 4000;
     this.birdTween= game.add.tween(this).to({
         x:this.x + 120
@@ -569,6 +590,7 @@ EnemyBird.prototype.collisionCross = function(game,cross,hitSound){
         obj1.kill();
     });
 }
+
 
 ////////////////TRIGGER DEL SUELO DEL INFIERNO//////////
 function HellTrigger(game, y){
@@ -602,7 +624,10 @@ function HellFloor(game,y, god){
     this.HellFloorTween= game.add.tween(this).to({
         y:god
     }, 60000,Phaser.Linear,true, 1,100,false);
+    this.animation = this.animations.add('LavaSube',Phaser.Animation.generateFrameNames('Lava',12,0),6,true);
+    this.animation.play();
 }
+
 HellFloor.prototype = Object.create(Phaser.Sprite.prototype);
 HellFloor.prototype.constructor = HellFloor;
 HellFloor.prototype.checkTeresa = function(game,Teresa,problem){
@@ -644,12 +669,12 @@ var PlayScene = {
         ///PAUSA
         var Esc = this.game.input.keyboard.addKey(Phaser.Keyboard.ESC);
         Esc.onDown.add(this.unpause, this);
-
-        var button = this.game.add.button(this.game.world.centerX, 400, 'enemy', actionOnClick, this, 2, 1, 0);
+//CODIGO BOTONES/////////
+/*        var button = this.game.add.button(this.game.world.centerX, 400, 'buttonNew', actionOnClick, this, 2, 1, 0);
 
         button.onInputOver.add(over, this);
         button.onInputOut.add(out, this);
-        button.onInputUp.add(up, this);
+        button.onInputUp.add(up, this);*/
         //AUDIO
         this.problem = this.game.add.audio('Problem');
         this.jumpEffect = this.game.add.audio('Jump');
@@ -659,6 +684,7 @@ var PlayScene = {
         this.launchSound = this.game.add.audio('ThrowFx');
         this.ecstasySound = this.game.add.audio('Onda');
         this.jumpEffect.loop = false;
+        this.problem.volume = 0.7;
         this.problem.play();
         this.problem.loop = true;
 
@@ -668,7 +694,9 @@ var PlayScene = {
 
         //Map
         this.map = this.game.add.tilemap('tilemap');
+        this.map.addTilesetImage('patrones2','mapSheet');
         this.map.addTilesetImage('patrones','tiles');
+
         //Creacion de las LAYERS
         this.backgroundLayer = this.map.createLayer('BackgroundLayer');
         this.groundLayer = this.map.createLayer('GroundLayer');
@@ -707,22 +735,22 @@ var PlayScene = {
 
         //Trigger del HellFloor
         this.hellFloorTrigger = new HellTrigger(this.game,2880,this.god.y);
-  
+
         //Introduzco a los enemigos
         this.enemies = this.game.add.group();
         this.enemies.enableBody = true;
         
         //Introduzco los enemigos voladores
-        this.enemies.add(new EnemyBird(0, this.game, 16*tile, 2840));//
-        this.enemies.add(new EnemyBird(0, this.game, 27*tile, 2840));// Primer demonio castillo
-        this.enemies.add(new EnemyBird(0, this.game, 31*tile, 2150));// Piso 2 izquierda
-        this.enemies.add(new EnemyBird(0, this.game, 36*tile, 2340));// 2
-        this.enemies.add(new EnemyBird(0, this.game, 38*tile, 1680));// 2
-        this.enemies.add(new EnemyBird(0, this.game, 34*tile, 1680));// Piso 3
-        this.enemies.add(new EnemyBird(0, this.game, 27*tile, 1300));// 3
-        this.enemies.add(new EnemyBird(0, this.game, 41*tile, 900));// 3
-        this.enemies.add(new EnemyBird(0, this.game, 35*tile, 800));
-        this.enemies.add(new EnemyBird(0, this.game, 30*tile, 700));// 
+        this.enemies.add(new EnemyBird( this.game, 16*tile, 2840));//
+        this.enemies.add(new EnemyBird( this.game, 27*tile, 2840));// Primer demonio castillo
+        this.enemies.add(new EnemyBird( this.game, 31*tile, 2150));// Piso 2 izquierda
+        this.enemies.add(new EnemyBird( this.game, 36*tile, 2340));// 2
+        this.enemies.add(new EnemyBird( this.game, 38*tile, 1680));// 2
+        this.enemies.add(new EnemyBird( this.game, 34*tile, 1680));// Piso 3
+        this.enemies.add(new EnemyBird( this.game, 27*tile, 1300));// 3
+        this.enemies.add(new EnemyBird( this.game, 41*tile, 900));// 3
+        this.enemies.add(new EnemyBird( this.game, 35*tile, 800));
+        this.enemies.add(new EnemyBird( this.game, 30*tile, 700));// 
         //Introduzco a los enemigos terrestres
         this.enemies.add(new Enemy(6*tile, 2928, 'enemy', this.game,200));
         this.enemies.add(new Enemy(11*tile, 2928, 'enemy', this.game,150));
@@ -806,6 +834,7 @@ var PlayScene = {
             this.hellFloor = new HellFloor(this.game,3200, this.god.y);
             this.FloorIsHere = true;
         }
+
         if(this.FloorIsHere)
             this.hellFloor.checkTeresa(this.game, this._Teresa, this.problem);
         
@@ -844,7 +873,7 @@ var PlayScene = {
 
         this.game.world.setBounds(0, 0, 2300, 3020);
         //this.game.physics.startSystem(Phaser.Physics.ARCADE);
-        this.game.stage.backgroundColor = '#a920ff';
+        this.game.stage.backgroundColor = '#F8D8D8';
         this.game.physics.arcade.enable(this._Teresa,this._enemy2);
         
         this._Teresa.body.bounce.y = 0;

@@ -1,0 +1,7 @@
+{"frames":{
+	"flyEnemy1":{"frame":{"x":0,"y":0,"w":136,"h":112},
+		"rotated":false,"trimmed":false,"spriteSourceSize":{"x":0,"y":0,"w":136,"h":112},"sourceSize":{"w":136,"h":112}},
+	"flyEnemy2":{"frame":{"x":171,"y":17,"w":136,"h":96},"rotated":false,"trimmed":false,"spriteSourceSize":{"x":0,"y":0,"w":136,"h":96},"sourceSize":{"w":136,"h":96}},
+	"flyEnemy3":{"frame":{"x":341,"y":17,"w":140,"h":100},"rotated":false,"trimmed":false,"spriteSourceSize":{"x":0,"y":0,"w":140,"h":100},"sourceSize":{"w":140,"h":100}},
+	"flyEnemy4":{"frame":{"x":522,"y":17,"w":108,"h":96},"rotated":false,"trimmed":false,"spriteSourceSize":{"x":0,"y":0,"w":108,"h":96},"sourceSize":{"w":108,"h":96}}},
+		"meta":{"app":"https://www.leshylabs.com/apps/sstool/","version":"Leshy SpriteSheet Tool v0.8.4","image":"Fly-Enemy.png","size":{"w":630,"h":117},"scale":1}}
