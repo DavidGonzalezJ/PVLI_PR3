@@ -684,8 +684,9 @@ function menu(game,problem){
     //this.button.onInputOver.add(actionOnClick,this);
 
     this.button.anchor.set(0.5);
-    this.goText = game.add.text(game.camera.x + 400, game.camera.y + 150, "GameOver");
+    this.goText = game.add.text(game.camera.x + 400, game.camera.y + 150, "PAUSED");
     this.text = game.add.text(0, 0, "Continue");
+    this.text.font = 'VT323';
     this.text.anchor.set(0.5);
     this.goText.anchor.set(0.5);
     this.button.addChild(this.text);
@@ -693,9 +694,10 @@ function menu(game,problem){
     //TODO 8 crear un boton con el texto 'Return Main Menu' que nos devuelva al menu del juego.
     /*this.button2 = game.add.button(game.camera.x + 400, game.camera.y + 400, 
         'button',this.click2, this, 2, 1, 0);*/
-    this.button2 = game.add.sprite(game.camera.x + 400, game.camera.y + 500, 'buttonNew');
+    this.button2 = game.add.sprite(game.camera.x + 400, game.camera.y + 400, 'buttonNew');
     this.button2.anchor.set(0.5);
     this.text2 = game.add.text(0, 0, "Return Menu");
+    this.text2.font = 'VT323';
     this.text2.anchor.set(0.5);
     this.button2.addChild(this.text2);
 

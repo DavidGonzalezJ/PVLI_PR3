@@ -28,3 +28,7 @@ main {
 footer {
   text-align: center;
 }
+
+#description{
+  font-family: 'Press Start 2P', cursive;  font-size: 1.6rem;
+}

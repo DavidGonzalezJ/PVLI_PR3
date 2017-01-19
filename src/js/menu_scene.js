@@ -9,13 +9,14 @@ var MenuScene = {
                                         'logo');
         logo.anchor.setTo(0.5, 0.5);
         var buttonStart = this.game.add.button(this.game.world.centerX, 
-                                               this.game.world.centerY, 
+                                               this.game.world.centerY+80, 
                                                'button', 
                                                this.actionOnClick, 
-                                               this, 2, 1, 0);
+                                               this,1,0,2);
         buttonStart.anchor.set(0.5);
+    
         var textStart = this.game.add.text(0, 0, "Start");
-        textStart.font = 'Sniglet';
+        textStart.font = 'VT323';
         textStart.anchor.set(0.5);
         buttonStart.addChild(textStart);
     },

@@ -4,15 +4,21 @@ var GameOver = {
         console.log("Game Over");
         this.sound = this.game.add.audio('GameOverFx');
         this.sound.play();
+        this.game.world.setBounds(0,0,800,600);
+
+        var logo = this.game.add.sprite(this.game.world.centerX, 
+                                        this.game.world.centerY, 
+                                        'GameOver');
+        logo.anchor.set(0.5);
         var button = this.game.add.button(400, 300,
                                           'button',
                                           this.actionOnClick, 
                                           this, 2, 1, 0);
         button.anchor.set(0.5);
-        var goText = this.game.add.text(400, 100, "GameOver");
+        //var goText = this.game.add.text(400, 100, "GameOver");
         var text = this.game.add.text(0, 0, "Reset Game");
         text.anchor.set(0.5);
-        goText.anchor.set(0.5);
+        //goText.anchor.set(0.5);
         button.addChild(text);
         
         //TODO 8 crear un boton con el texto 'Return Main Menu' que nos devuelva al menu del juego.
@@ -90,6 +96,8 @@ var PreloaderScene = {
     //this.game.load.image('lava','images/lava.png');
 
     //Carga de la cruz
+    
+    this.game.load.image('GameOver', 'images/gameover.jpg');
     this.game.load.image('cross', 'images/cross.png');
     this.game.load.atlas('Teresa', 'images/Teresa.png', 'images/Teresa.json', 
       Phaser.Loader.TEXTURE_ATLAS_JSON_HASH);
@@ -142,7 +150,7 @@ var wfconfig = {
     },
  
     google: {
-        families: ['Sniglet']
+        families: ['Sniglet','VT323']
     }
  
 };
@@ -184,13 +192,14 @@ var MenuScene = {
                                         'logo');
         logo.anchor.setTo(0.5, 0.5);
         var buttonStart = this.game.add.button(this.game.world.centerX, 
-                                               this.game.world.centerY, 
+                                               this.game.world.centerY+80, 
                                                'button', 
                                                this.actionOnClick, 
-                                               this, 2, 1, 0);
+                                               this,1,0,2);
         buttonStart.anchor.set(0.5);
+    
         var textStart = this.game.add.text(0, 0, "Start");
-        textStart.font = 'Sniglet';
+        textStart.font = 'VT323';
         textStart.anchor.set(0.5);
         buttonStart.addChild(textStart);
     },
@@ -929,8 +938,9 @@ function menu(game,problem){
     //this.button.onInputOver.add(actionOnClick,this);
 
     this.button.anchor.set(0.5);
-    this.goText = game.add.text(game.camera.x + 400, game.camera.y + 150, "GameOver");
+    this.goText = game.add.text(game.camera.x + 400, game.camera.y + 150, "PAUSED");
     this.text = game.add.text(0, 0, "Continue");
+    this.text.font = 'VT323';
     this.text.anchor.set(0.5);
     this.goText.anchor.set(0.5);
     this.button.addChild(this.text);
@@ -938,9 +948,10 @@ function menu(game,problem){
     //TODO 8 crear un boton con el texto 'Return Main Menu' que nos devuelva al menu del juego.
     /*this.button2 = game.add.button(game.camera.x + 400, game.camera.y + 400, 
         'button',this.click2, this, 2, 1, 0);*/
-    this.button2 = game.add.sprite(game.camera.x + 400, game.camera.y + 500, 'buttonNew');
+    this.button2 = game.add.sprite(game.camera.x + 400, game.camera.y + 400, 'buttonNew');
     this.button2.anchor.set(0.5);
     this.text2 = game.add.text(0, 0, "Return Menu");
+    this.text2.font = 'VT323';
     this.text2.anchor.set(0.5);
     this.button2.addChild(this.text2);
 
