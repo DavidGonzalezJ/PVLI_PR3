@@ -98,6 +98,8 @@ var PreloaderScene = {
     //Carga de la cruz
     
     this.game.load.image('GameOver', 'images/gameover.jpg');
+    this.game.load.image('Victory', 'images/victory.jpg');
+
     this.game.load.image('cross', 'images/cross.png');
     this.game.load.atlas('Teresa', 'images/Teresa.png', 'images/Teresa.json', 
       Phaser.Loader.TEXTURE_ATLAS_JSON_HASH);
@@ -728,6 +730,7 @@ var PlayScene = {
         //nombre de la animación, frames, framerate, isloop
 
         //Creamos al player con un sprite por defecto.
+        //this._Teresa = new Teresa (this.game, 1620,200);
         this._Teresa = new Teresa (this.game, 100, 2928);
 
         //Posteriormente haremos que cambie el fondo si se ha comido la magdalena
@@ -771,7 +774,7 @@ var PlayScene = {
         //this.enemies.add(new Enemy(6*tile, 2928, 'enemy', this.game,60));
         this.enemies.add(new Enemy(42*tile, 2300, 'enemy', this.game,120));
         this.enemies.add(new Enemy(29*tile, 2000, 'enemy', this.game,80));
-        this.enemies.add(new Enemy(30*tile, 2300, 'enemy', this.game,80));//Piso 1 plataforma 3
+        this.enemies.add(new Enemy(30*tile+8, 2300, 'enemy', this.game,80));//Piso 1 plataforma 3
         this.enemies.add(new Enemy(36*tile, 1950, 'enemy', this.game,200));
         this.enemies.add(new Enemy(40*tile, 1950, 'enemy', this.game,150));
         this.enemies.add(new Enemy(31*tile, 1800, 'enemy', this.game,180));
@@ -987,20 +990,26 @@ var victoryScene = {
         this.aleluya = this.game.add.audio('Aleluya');
         this.aleluya.loop = true;
         this.aleluya.play();
-        var button = this.game.add.button(400, 300,
+        this.game.world.setBounds(0,0,800,600);
+
+        var logo = this.game.add.sprite(this.game.world.centerX, 
+                                        this.game.world.centerY, 
+                                        'Victory');
+        logo.anchor.set(0.5);
+        var button = this.game.add.button(250, 300,
             'button',this.actionOnClick, this, 2, 1, 0);
 
         button.anchor.set(0.5);
 
-        var goText = this.game.add.text(400, 100, "Victory");
+       // var goText = this.game.add.text(400, 100, "Victory");
 
         var text = this.game.add.text(0, 0, "Restart");
         text.anchor.set(0.5);
-        goText.anchor.set(0.5);
+        //goText.anchor.set(0.5);
         button.addChild(text);
         
         //TODO 8 crear un boton con el texto 'Return Main Menu' que nos devuelva al menu del juego.
-        var button2 = this.game.add.button(400, 400,
+        var button2 = this.game.add.button(250, 400,
                                           'button',
                                           this.click2, 
                                           this, 2, 1, 0);

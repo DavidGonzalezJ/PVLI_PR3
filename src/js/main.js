@@ -49,6 +49,8 @@ var PreloaderScene = {
     //Carga de la cruz
     
     this.game.load.image('GameOver', 'images/gameover.jpg');
+    this.game.load.image('Victory', 'images/victory.jpg');
+
     this.game.load.image('cross', 'images/cross.png');
     this.game.load.atlas('Teresa', 'images/Teresa.png', 'images/Teresa.json', 
       Phaser.Loader.TEXTURE_ATLAS_JSON_HASH);

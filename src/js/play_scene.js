@@ -474,6 +474,7 @@ var PlayScene = {
         //nombre de la animación, frames, framerate, isloop
 
         //Creamos al player con un sprite por defecto.
+        //this._Teresa = new Teresa (this.game, 1620,200);
         this._Teresa = new Teresa (this.game, 100, 2928);
 
         //Posteriormente haremos que cambie el fondo si se ha comido la magdalena
@@ -517,7 +518,7 @@ var PlayScene = {
         //this.enemies.add(new Enemy(6*tile, 2928, 'enemy', this.game,60));
         this.enemies.add(new Enemy(42*tile, 2300, 'enemy', this.game,120));
         this.enemies.add(new Enemy(29*tile, 2000, 'enemy', this.game,80));
-        this.enemies.add(new Enemy(30*tile, 2300, 'enemy', this.game,80));//Piso 1 plataforma 3
+        this.enemies.add(new Enemy(30*tile+8, 2300, 'enemy', this.game,80));//Piso 1 plataforma 3
         this.enemies.add(new Enemy(36*tile, 1950, 'enemy', this.game,200));
         this.enemies.add(new Enemy(40*tile, 1950, 'enemy', this.game,150));
         this.enemies.add(new Enemy(31*tile, 1800, 'enemy', this.game,180));
